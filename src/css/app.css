@@ -1,0 +1,139 @@
+/* app global css */
+/* ================================================
+   色彩系統：魚群悠游 (Light) ／ 夜裡海浪 (Dark)
+   ================================================ */
+
+/* ── 明亮模式 ────────────────────────────────── */
+.q-layout {
+  background-color: #F6F8F8;
+  color: #4A5759;
+}
+
+/* ── 頁首 (Header / Toolbar) ─────────────────── */
+.app-header {
+  background-color: #6B9080;
+  color: #ffffff;
+}
+
+/* ── 側邊欄 (Drawer) ────────────────────────── */
+.app-drawer {
+  background-color: #E8EFEF !important;
+  color: #4A5759 !important;
+}
+
+/* 側邊欄選單項目 */
+.app-drawer-item {
+  color: #4A5759;
+}
+
+/* 選單項目副標 (overline) */
+.app-drawer-sublabel {
+  color: #6B9080;
+}
+
+/* 選單項目主標 */
+.app-drawer-label {
+  color: #4A5759;
+}
+
+/* 已選中項目 */
+.app-drawer-active {
+  background-color: #6B9080 !important;
+  box-shadow: 0 2px 8px rgba(107, 144, 128, 0.35) !important;
+}
+.app-drawer-active .app-drawer-sublabel,
+.app-drawer-active .app-drawer-label {
+  color: #ffffff !important;
+}
+
+/* ── 內頁卡片 ───────────────────────────────── */
+.q-card {
+  background-color: #ffffff;
+  border-color: #dde6e6;
+}
+
+/* ── 每日行程 Hero Banner ─────────────────────── */
+.day-hero {
+  background-color: #EEF3F2;
+}
+
+/* ================================================
+   暗色模式  (body--dark)
+   ================================================ */
+
+/* 整體背景 */
+.body--dark .q-layout {
+  background-color: #1D2426;
+  color: #DDE3E4;
+}
+
+/* 頁首 */
+.body--dark .app-header {
+  background-color: #181E20;
+  color: #DDE3E4;
+}
+
+/* 側邊欄 */
+.body--dark .app-drawer {
+  background-color: #181E20 !important;
+  color: #DDE3E4 !important;
+}
+
+/* 選單項目 */
+.body--dark .app-drawer-item {
+  color: #B5C9C5;
+}
+
+/* 選單項目副標 */
+.body--dark .app-drawer-sublabel {
+  color: #84A59D;
+}
+
+/* 選單項目主標 */
+.body--dark .app-drawer-label {
+  color: #B5C9C5;
+}
+
+/* 已選中項目 */
+.body--dark .app-drawer-active {
+  background-color: #84A59D !important;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5) !important;
+}
+.body--dark .app-drawer-active .app-drawer-sublabel,
+.body--dark .app-drawer-active .app-drawer-label {
+  color: #1D2426 !important;
+}
+
+/* 卡片 */
+.body--dark .q-card {
+  background-color: #263032 !important;
+  border-color: #344447 !important;
+}
+.body--dark .q-card .text-grey-8 {
+  color: #B5C9C5 !important;
+}
+
+/* 每日行程 Hero Banner */
+.body--dark .day-hero {
+  background-color: #263032 !important;
+}
+.body--dark .day-hero .text-teal-9 {
+  color: #84A59D !important;
+}
+.body--dark .day-hero .text-teal-7 {
+  color: #A4C3B2 !important;
+}
+
+/* 提示卡片特殊文字色 */
+.body--dark .q-card .text-orange-10 {
+  color: #F9D9C4 !important;
+}
+.body--dark .q-card .text-pink-10 {
+  color: #F5C9D8 !important;
+}
+.body--dark .q-card .text-light-blue-10 {
+  color: #BAE3F9 !important;
+}
+.body--dark .q-card .text-green-10 {
+  color: #B8F0CE !important;
+}
