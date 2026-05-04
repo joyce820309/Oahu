@@ -29,7 +29,7 @@ Full color spec: [`doc/ColorTheme.md`](doc/ColorTheme.md)
 
 **Light mode** (Sunset Beach / 夕陽沙灘):
 - Primary `#56C6CC` · Secondary `#7FCBD0` · Accent `#FFB97A`
-- Background `#FCE6B8` · Drawer `#FAD9A8` · Text `#3A4A52` · Hero `#FFE9A8`
+- Background `#f7eedb` · Drawer `#FAD9A8` · Text `#3A4A52` · Hero `#FFE9A8`
 
 **Dark mode** (Twilight Beach / 暮色沙灘):
 - Primary `#6A3A78` · Secondary `#C26A86` · Accent `#F2B788`

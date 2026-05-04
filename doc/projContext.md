@@ -41,8 +41,10 @@
 
 我的目標設備為 iPhone (xs)、iPad (sm/md)、13吋 MacBook (md/lg)。請全面檢查 UI，確保使用 Quasar 的 Grid 系統與響應式類別（如 lt-md, gt-sm, col-xs-12, col-md-8 等）來控制版面。
 
-- iPhone (xs): 側邊欄 (Drawer) 預設必須隱藏，透過 Header 的漢堡選單喚出；主內容滿版。
-
+- iPhone (xs): < 600px，側邊欄 (Drawer) 預設必須隱藏，透過 Header 的漢堡選單喚出；主內容滿版。
+- iPad (sm):600px - 768px
+- iPad (md):768px - 1439px
+- MacBook (lg): > 1440 px
 - iPad & MacBook (sm/md/lg): 側邊欄應固定在左側顯示，不遮擋主內容 (使用 show-if-above)；主內容區塊應置中且限制最大寬度 (例如 max-width: 900px)，避免文字過度拉長。
 ---
 ### Phase 4: PWA 細節設定與優化

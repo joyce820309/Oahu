@@ -1,139 +1,397 @@
 /* app global css */
 /* ================================================
-   色彩系統：夕陽沙灘 (Light) ／ 暮色沙灘 (Dark)
+   Hele — Design Tokens
+   Light: Sunset Beach / Dark: Twilight Beach
    ================================================ */
 
-/* ── 明亮模式 ────────────────────────────────── */
-.q-layout {
-  background-color: #FCE6B8;
-  color: #3A4A52;
+:root {
+  /* ── Light theme ── */
+  --bg:                 #FBF1E0;
+  --bg-soft:            #F8E2C2;
+  --surface:            #FFFCF5;
+  --surface-translucent: rgba(255, 252, 245, 0.62);
+  --surface-stroke:     rgba(58, 74, 82, 0.08);
+
+  --ink:                #1F2D33;
+  --ink-soft:           #3A4A52;
+  --ink-mute:           #7B8A92;
+  --ink-faint:          #C4CFD4;
+
+  --sky-1: #56C6CC;
+  --sky-2: #88D5D2;
+  --sky-3: #FAD9A8;
+  --sky-4: #FFB97A;
+  --sky-5: #FFE3A8;
+
+  --accent:             #FF9D5C;
+  --accent-soft:        #FFE3C2;
+  --accent-deep:        #E07A2E;
+
+  --warm:               #FFCB7A;
+  --warm-soft:          #FFEAC2;
+
+  --lagoon:             #4FB8BF;
+  --lagoon-soft:        #C8EAEC;
+  --leaf:               #7AAEA8;
+  --leaf-soft:          #D6E6E2;
+  --hibiscus:           #E5798E;
+  --hibiscus-soft:      #FAD3DA;
+
+  --shadow-card:        0 1px 2px rgba(58, 74, 82, 0.05), 0 8px 24px rgba(79, 184, 191, 0.10);
+  --shadow-float:       0 16px 44px rgba(255, 157, 92, 0.18);
+
+  --radius-card:        22px;
+  --radius-pill:        999px;
+  --blur:               18px;
+
+  --font-sans:    'Inter', 'Noto Sans TC', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  --font-display: 'Caveat', 'Ma Shan Zheng', cursive;
 }
 
-/* ── 頁首 (Header / Toolbar) ─────────────────── */
-.app-header {
-  background-color: #56C6CC;
-  color: #ffffff;
-}
+/* ── Dark theme ── */
+.body--dark {
+  --bg:                 #0B1844;
+  --bg-soft:            #1A1F4A;
+  --bg-deep:            #060B2E;
+  --surface:            #2A1F5C;
+  --surface-translucent: rgba(42, 31, 92, 0.55);
+  --surface-stroke:     rgba(242, 213, 168, 0.10);
 
-/* ── 側邊欄 (Drawer) ────────────────────────── */
-.app-drawer {
-  background-color: #FAD9A8 !important;
-  color: #3A4A52 !important;
-}
+  --ink:                #F2D5A8;
+  --ink-soft:           #E2BFA0;
+  --ink-mute:           #9A8BB8;
+  --ink-faint:          #4A4078;
 
-/* 側邊欄選單項目 */
-.app-drawer-item {
-  color: #3A4A52;
-}
+  --sky-1: #0B1844;
+  --sky-2: #2A1F5C;
+  --sky-3: #6A3A78;
+  --sky-4: #C26A86;
+  --sky-5: #F2B788;
 
-/* 選單項目副標 (overline) */
-.app-drawer-sublabel {
-  color: #56C6CC;
-}
+  --accent:             #F2B788;
+  --accent-soft:        rgba(242, 183, 136, 0.22);
+  --accent-deep:        #FFCE9E;
 
-/* 選單項目主標 */
-.app-drawer-label {
-  color: #3A4A52;
-}
+  --warm:               #F2D27A;
+  --warm-soft:          rgba(242, 210, 122, 0.22);
 
-/* 已選中項目 */
-.app-drawer-active {
-  background-color: #56C6CC !important;
-  box-shadow: 0 2px 8px rgba(86, 198, 204, 0.35) !important;
-}
-.app-drawer-active .app-drawer-sublabel,
-.app-drawer-active .app-drawer-label {
-  color: #ffffff !important;
-}
+  --lagoon:             #7FB8D8;
+  --lagoon-soft:        rgba(127, 184, 216, 0.20);
+  --leaf:               #9A8BB8;
+  --leaf-soft:          rgba(154, 139, 184, 0.20);
+  --hibiscus:           #C26A86;
+  --hibiscus-soft:      rgba(194, 106, 134, 0.22);
 
-/* ── 內頁卡片 ───────────────────────────────── */
-.q-card {
-  background-color: #ffffff;
-  border-color: #F0D4A0;
-}
-
-/* ── 每日行程 Hero Banner ─────────────────────── */
-.day-hero {
-  background-color: #FFE9A8;
+  --shadow-card:        0 1px 2px rgba(0, 0, 0, 0.50), 0 12px 32px rgba(11, 24, 68, 0.55);
+  --shadow-float:       0 20px 60px rgba(11, 24, 68, 0.60);
 }
 
 /* ================================================
-   暗色模式  (body--dark)
+   Base layout
    ================================================ */
 
-/* 整體背景 */
-.body--dark .q-layout {
-  background-color: #0B1844;
-  color: #F2D5A8;
+.q-layout {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-sans);
 }
 
-/* 頁首 */
+/* Watercolor ambient background */
+.app-bg-wash {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(75% 45% at 20% 0%, var(--lagoon-soft) 0%, transparent 60%),
+    radial-gradient(70% 45% at 100% 25%, var(--hibiscus-soft) 0%, transparent 60%),
+    radial-gradient(80% 50% at 50% 100%, var(--warm-soft) 0%, transparent 70%),
+    var(--bg);
+}
+
+/* ================================================
+   Glass surfaces
+   ================================================ */
+
+.glass {
+  background: var(--surface-translucent);
+  backdrop-filter: blur(var(--blur)) saturate(160%);
+  -webkit-backdrop-filter: blur(var(--blur)) saturate(160%);
+  border-radius: var(--radius-card);
+  border: none;
+}
+
+.glass-strong {
+  background: var(--surface-translucent);
+  backdrop-filter: blur(calc(var(--blur) * 1.4)) saturate(180%);
+  -webkit-backdrop-filter: blur(calc(var(--blur) * 1.4)) saturate(180%);
+  border-radius: var(--radius-card);
+  border: none;
+  box-shadow: var(--shadow-card);
+}
+
+/* ================================================
+   Typography
+   ================================================ */
+
+.t-display {
+  font-family: var(--font-display);
+  font-weight: 600;
+  line-height: 1.05;
+  letter-spacing: 0;
+}
+
+.t-mono-cap {
+  font-family: var(--font-sans);
+  font-weight: 500;
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-mute);
+}
+
+/* ================================================
+   Header
+   ================================================ */
+
+.app-header {
+  background: var(--surface-translucent);
+  backdrop-filter: blur(20px) saturate(160%);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
+  color: var(--ink);
+  border-bottom: 1px solid var(--surface-stroke);
+  box-shadow: none !important;
+}
+
 .body--dark .app-header {
-  background-color: #0A0B22;
-  color: #F2D5A8;
+  background: rgba(10, 11, 34, 0.75);
+  color: var(--ink);
 }
 
-/* 側邊欄 */
+/* ================================================
+   Drawer
+   ================================================ */
+
+.app-drawer {
+  background-color: var(--bg-soft) !important;
+  color: var(--ink) !important;
+}
+
 .body--dark .app-drawer {
   background-color: #0A0B22 !important;
-  color: #F2D5A8 !important;
+  color: var(--ink) !important;
 }
 
-/* 選單項目 */
+.app-drawer-item {
+  color: #a88949;
+  border-radius: 12px;
+}
+
 .body--dark .app-drawer-item {
-  color: #F2D5A8;
+  color: var(--ink-mute);
 }
 
-/* 選單項目副標 */
+.app-drawer-sublabel {
+  color: var(--lagoon);
+}
+
 .body--dark .app-drawer-sublabel {
-  color: #6A3A78;
+  color: var(--ink-mute);
 }
 
-/* 選單項目主標 */
+.app-drawer-label {
+  color: var(--ink-soft);
+}
+
 .body--dark .app-drawer-label {
-  color: #F2D5A8;
+  color: var(--ink-soft);
 }
 
-/* 已選中項目 */
+.app-drawer-active {
+  background: #ebc77a !important;
+  box-shadow: 0 2px 8px rgba(235, 199, 122, 0.35) !important;
+}
+
+.app-drawer-active .app-drawer-sublabel,
+.app-drawer-active .app-drawer-label {
+  color: #fffaf1 !important;
+}
+
 .body--dark .app-drawer-active {
-  background-color: #6A3A78 !important;
+  background: #f0ffff21 !important;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5) !important;
 }
+
 .body--dark .app-drawer-active .app-drawer-sublabel,
 .body--dark .app-drawer-active .app-drawer-label {
-  color: #F2D5A8 !important;
+  color: var(--ink) !important;
 }
 
-/* 卡片 */
+.drawer-section-label {
+  letter-spacing: 1.2px;
+  opacity: 0.45;
+  font-size: 10px;
+}
+
+/* ================================================
+   Bottom Navigation (phones only)
+   ================================================ */
+
+.bottom-nav-bar {
+  background: transparent !important;
+  border: none !important;
+  padding: 0 12px 18px;
+}
+
+.bottom-nav-glass {
+  background: var(--surface-translucent);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border-radius: 28px;
+  box-shadow: var(--shadow-card);
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  padding: 6px;
+}
+
+.bottom-nav-tab {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  color: var(--ink-mute);
+  font-size: 10px;
+  font-weight: 500;
+  font-family: var(--font-sans);
+  padding: 4px 2px;
+  transition: color 0.25s;
+  text-decoration: none;
+}
+
+.bottom-nav-tab.active {
+  color: var(--accent-deep);
+}
+
+.bottom-nav-pill {
+  width: 40px;
+  height: 26px;
+  border-radius: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  transition: background 0.25s;
+}
+
+.bottom-nav-tab.active .bottom-nav-pill {
+  background: var(--accent-soft);
+}
+
+.body--dark .bottom-nav-tab.active {
+  color: var(--accent-deep);
+}
+
+.body--dark .bottom-nav-tab.active .bottom-nav-pill {
+  background: var(--accent-soft);
+}
+
+/* ================================================
+   Cards (override q-card)
+   ================================================ */
+
+.q-card {
+  background: var(--surface-translucent) !important;
+  backdrop-filter: blur(var(--blur)) saturate(160%);
+  -webkit-backdrop-filter: blur(var(--blur)) saturate(160%);
+  border-radius: var(--radius-card) !important;
+  border: none !important;
+  box-shadow: var(--shadow-card) !important;
+  color: var(--ink) !important;
+}
+
 .body--dark .q-card {
-  background-color: #2A1F5C !important;
-  border-color: #3D2E6E !important;
+  background: var(--surface-translucent) !important;
+  border: none !important;
 }
+
 .body--dark .q-card .text-grey-8 {
-  color: #F2D5A8 !important;
+  color: var(--ink-soft) !important;
 }
 
-/* 每日行程 Hero Banner */
+/* ================================================
+   Hero (DaysPage)
+   ================================================ */
+
+.day-hero {
+  background: linear-gradient(160deg, var(--sky-1), var(--sky-2) 30%, var(--sky-3) 65%, var(--sky-4));
+  color: var(--surface) !important;
+  position: relative;
+  overflow: hidden;
+}
+
+.day-hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at 80% 20%, rgba(255,255,255,0.15) 0%, transparent 60%);
+  pointer-events: none;
+}
+
 .body--dark .day-hero {
-  background-color: #2A1F5C !important;
-}
-.body--dark .day-hero .text-teal-9 {
-  color: #6A3A78 !important;
-}
-.body--dark .day-hero .text-teal-7 {
-  color: #C26A86 !important;
+  background: linear-gradient(160deg, var(--sky-1), var(--sky-2) 30%, var(--sky-3) 65%, var(--sky-4)) !important;
 }
 
-/* 提示卡片特殊文字色 */
-.body--dark .q-card .text-orange-10 {
-  color: #F2B788 !important;
+/* ================================================
+   Tip cards (Day-specific)
+   ================================================ */
+
+.tip-card-orange {
+  background: var(--warm-soft) !important;
+  border: none !important;
 }
-.body--dark .q-card .text-pink-10 {
-  color: #C26A86 !important;
+
+.tip-card-pink {
+  background: var(--hibiscus-soft) !important;
+  border: none !important;
 }
-.body--dark .q-card .text-light-blue-10 {
-  color: #7FCBD0 !important;
+
+.tip-card-blue {
+  background: var(--lagoon-soft) !important;
+  border: none !important;
 }
-.body--dark .q-card .text-green-10 {
-  color: #56C6CC !important;
+
+.tip-card-green {
+  background: var(--leaf-soft) !important;
+  border: none !important;
 }
+
+.body--dark .tip-card-orange { background: var(--warm-soft) !important; }
+.body--dark .tip-card-pink   { background: var(--hibiscus-soft) !important; }
+.body--dark .tip-card-blue   { background: var(--lagoon-soft) !important; }
+.body--dark .tip-card-green  { background: var(--leaf-soft) !important; }
+
+/* text overrides */
+.body--dark .q-card .text-orange-10  { color: var(--warm) !important; }
+.body--dark .q-card .text-pink-10    { color: var(--hibiscus) !important; }
+.body--dark .q-card .text-light-blue-10 { color: var(--lagoon) !important; }
+.body--dark .q-card .text-green-10   { color: var(--leaf) !important; }
+
+/* ================================================
+   Animations
+   ================================================ */
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.fade-up { animation: fadeUp 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+
+.transition-generic { transition: all 0.3s ease; }

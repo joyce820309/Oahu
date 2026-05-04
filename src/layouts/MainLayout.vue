@@ -1,42 +1,60 @@
 <template>
   <q-layout view="lHh Lpr lFf" class="q-layout">
 
-    <!-- Header：手機版含漢堡選單，桌面版只顯示 title + 暗色切換 -->
-    <q-header class="app-header">
+    <q-header class="app-header" elevated>
       <q-toolbar>
-        <!-- 漢堡選單：僅在小螢幕顯示 -->
-        <q-btn flat dense round icon="menu" aria-label="Menu" class="lt-md" @click="toggleLeftDrawer" />
-        <q-toolbar-title class="text-subtitle1 text-weight-bold row items-center">
+        <!-- 漢堡選單：sm 平板才顯示（xs 用底部導覽，md+ 抽屜自動展開） -->
+        <q-btn flat dense round icon="menu" aria-label="Menu" class="gt-xs lt-md" @click="toggleLeftDrawer" />
 
-
-          <div>
-            <q-icon name="beach_access" size="sm" class="text-teal-3 q-mr-sm" />
-            <span>
-              夏威夷慵懶行- Day {{ activeDay }}
-            </span>
-          </div>
-
-          <div class="column text-caption q-ml-md ">
-            <div class=" text-teal-2">2026.07.18 - 07.24</div>
-            <div class=" text-teal-4 ">Alohilani Resort | 租車自駕</div>
-          </div>
+        <q-toolbar-title class="row items-center no-wrap">
+          <q-icon name="beach_access" size="xs" class="q-mr-xs" />
+          <span class="text-weight-bold">Hele</span>
+          <span class="text-caption q-ml-sm gt-xs" style="opacity:0.8">夏威夷慵懶行 2026</span>
         </q-toolbar-title>
 
-
-
-
-        <!-- 暗色/明亮模式切換按鈕 -->
         <q-btn flat dense round :icon="$q.dark.isActive ? 'light_mode' : 'dark_mode'" @click="$q.dark.toggle()" />
       </q-toolbar>
     </q-header>
 
-    <q-drawer v-model="leftDrawerOpen" show-if-above bordered class="app-drawer flex column" :width="300">
-
+    <q-drawer v-model="leftDrawerOpen" show-if-above bordered class="app-drawer flex column" :width="280">
       <q-scroll-area class="fit">
+
+        <!-- 頁面導覽 -->
+        <q-list padding class="q-px-sm q-pb-xs">
+          <q-item-label header class="text-caption text-weight-bold drawer-section-label">PAGES</q-item-label>
+          <q-item
+            v-for="page in navPages"
+            :key="page.to"
+            clickable v-ripple
+            :to="page.to"
+            :exact="page.exact"
+            active-class="app-drawer-active"
+            class="q-mb-xs rounded-borders app-drawer-item"
+            @click="closeDrawerOnSmall"
+          >
+            <q-item-section avatar>
+              <q-icon :name="page.icon" size="sm" />
+            </q-item-section>
+            <q-item-section>
+              <q-item-label class="text-weight-medium app-drawer-label">{{ page.label }}</q-item-label>
+            </q-item-section>
+          </q-item>
+        </q-list>
+
+        <q-separator class="q-mx-md q-my-sm" />
+
+        <!-- 行程天數 -->
         <q-list padding class="q-px-sm">
-          <q-item v-for="d in itineraryData" :key="d.day" clickable v-ripple :active="activeDay === d.day"
-            active-class="app-drawer-active" class="q-mb-sm rounded-borders transition-generic app-drawer-item"
-            @click="selectDay(d.day)">
+          <q-item-label header class="text-caption text-weight-bold drawer-section-label">ITINERARY</q-item-label>
+          <q-item
+            v-for="d in itineraryData"
+            :key="d.day"
+            clickable v-ripple
+            :active="activeDay === d.day"
+            active-class="app-drawer-active"
+            class="q-mb-sm rounded-borders transition-generic app-drawer-item"
+            @click="goToDay(d.day)"
+          >
             <q-item-section>
               <q-item-label overline class="text-weight-bold app-drawer-sublabel">
                 DAY {{ d.day }} · {{ d.date }}
@@ -47,34 +65,77 @@
             </q-item-section>
           </q-item>
         </q-list>
+
       </q-scroll-area>
     </q-drawer>
 
     <q-page-container>
       <router-view />
     </q-page-container>
+
+    <!-- 底部導覽列：僅手機 (xs < 600px) -->
+    <q-footer class="lt-sm bottom-nav-bar">
+      <div class="bottom-nav-glass">
+        <router-link
+          v-for="tab in bottomTabs"
+          :key="tab.to"
+          :to="tab.to"
+          :exact="tab.exact"
+          custom
+          v-slot="{ isActive, navigate }"
+        >
+          <button
+            class="bottom-nav-tab"
+            :class="{ active: isActive }"
+            @click="navigate"
+          >
+            <div class="bottom-nav-pill">
+              <q-icon :name="tab.icon" size="18px" />
+            </div>
+            <span>{{ tab.label }}</span>
+          </button>
+        </router-link>
+      </div>
+    </q-footer>
+
   </q-layout>
 </template>
 
 <script setup>
 import { ref, provide, computed } from 'vue'
+import { useRouter } from 'vue-router'
 
-// 狀態管理
+const router = useRouter()
 const activeDay = ref(1)
 const leftDrawerOpen = ref(false)
 
-// 切換天數 (若是手機版，點擊後自動收起側邊欄)
-const selectDay = (day) => {
-  activeDay.value = day
-  if (window.innerWidth < 1024) {
-    leftDrawerOpen.value = false
-  }
+const closeDrawerOnSmall = () => {
+  if (window.innerWidth < 1024) leftDrawerOpen.value = false
 }
 
-// 漢堡選單開關
+const selectDay = (day) => {
+  activeDay.value = day
+  closeDrawerOnSmall()
+}
+
+const goToDay = (day) => {
+  selectDay(day)
+  router.push('/days')
+}
+
 const toggleLeftDrawer = () => {
   leftDrawerOpen.value = !leftDrawerOpen.value
 }
+
+const navPages = [
+  { to: '/', label: 'Trip', icon: 'home', exact: true },
+  { to: '/days', label: 'Days', icon: 'event', exact: false },
+  { to: '/explore', label: 'Explore', icon: 'travel_explore', exact: false },
+  { to: '/pack', label: 'Pack', icon: 'backpack', exact: false },
+  { to: '/me', label: 'Me', icon: 'person', exact: false },
+]
+
+const bottomTabs = navPages
 
 // 行程資料
 const itineraryData = [
@@ -169,10 +230,10 @@ const activeData = computed(() => {
   return itineraryData.find(d => d.day === activeDay.value) || itineraryData[0]
 })
 
-// 提供給子組件使用
 provide('activeDay', activeDay)
 provide('activeData', activeData)
 provide('selectDay', selectDay)
+provide('itineraryData', itineraryData)
 </script>
 
 <style scoped>
