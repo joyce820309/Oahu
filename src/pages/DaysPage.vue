@@ -1,7 +1,7 @@
 <template>
   <q-page class="q-pb-xl" style="background: transparent;">
 
-    <!-- Day chip selector: phones only (drawer handles tablet+) -->
+    <!-- Day chip selector: phones only -->
     <div class="day-chips-wrap lt-sm">
       <div class="day-chips-row">
         <button
@@ -12,6 +12,23 @@
           @click="selectDay(d.day)"
         >
           Day {{ d.day }}
+        </button>
+      </div>
+    </div>
+
+    <!-- Itinerary tab bar: tablet only (sm, drawer hidden but not yet open) -->
+    <div class="itinerary-bar gt-xs lt-md">
+      <div class="itinerary-bar-inner">
+        <button
+          v-for="d in itineraryData"
+          :key="d.day"
+          class="itinerary-tab"
+          :class="{ active: activeDay === d.day }"
+          @click="selectDay(d.day)"
+        >
+          <span class="itinerary-tab-day">DAY {{ d.day }}</span>
+          <span class="itinerary-tab-date">{{ d.date.replace('2026.', '').replace(/\s*\(.\)/, '') }}</span>
+          <span class="itinerary-tab-title">{{ d.title }}</span>
         </button>
       </div>
     </div>
@@ -166,6 +183,83 @@ const itineraryData = inject('itineraryData')
 </script>
 
 <style scoped>
+/* ── Itinerary tab bar (tablet) ── */
+.itinerary-bar {
+  position: sticky;
+  top: 50px;
+  z-index: 10;
+  background: var(--bg);
+  border-bottom: 1px solid var(--surface-stroke);
+  padding: 10px 0 8px;
+}
+
+.itinerary-bar-inner {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  padding: 0 20px;
+  scrollbar-width: none;
+}
+.itinerary-bar-inner::-webkit-scrollbar { display: none; }
+
+.itinerary-tab {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  padding: 8px 14px;
+  border-radius: 14px;
+  border: 1px solid var(--surface-stroke);
+  cursor: pointer;
+  flex-shrink: 0;
+  min-width: 110px;
+  max-width: 160px;
+  transition: all 0.22s;
+  background: var(--surface-translucent);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  text-align: left;
+  font-family: var(--font-sans);
+}
+
+.itinerary-tab.active {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+}
+
+.itinerary-tab-day {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: var(--ink-mute);
+  text-transform: uppercase;
+}
+
+.itinerary-tab.active .itinerary-tab-day {
+  color: var(--accent-deep);
+}
+
+.itinerary-tab-date {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--ink-mute);
+}
+
+.itinerary-tab.active .itinerary-tab-date {
+  color: var(--accent-deep);
+}
+
+.itinerary-tab-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink);
+  line-height: 1.3;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
 /* ── Day chip selector (phones) ── */
 .day-chips-wrap {
   position: sticky;

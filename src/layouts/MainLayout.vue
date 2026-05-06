@@ -12,6 +12,9 @@
           <span class="text-caption q-ml-sm gt-xs" style="opacity:0.8">夏威夷慵懶行 2026</span>
         </q-toolbar-title>
 
+        <q-btn flat dense round @click="toggleLocale" style="font-size: 11px; font-weight: 700; letter-spacing: 0.02em; min-width: 36px;">
+          {{ locale === 'zh-TW' ? 'EN' : '中' }}
+        </q-btn>
         <q-btn flat dense round :icon="$q.dark.isActive ? 'light_mode' : 'dark_mode'" @click="$q.dark.toggle()" />
       </q-toolbar>
     </q-header>
@@ -41,6 +44,7 @@
           </q-item>
         </q-list>
 
+        <template v-if="route.path === '/days'">
         <q-separator class="q-mx-md q-my-sm" />
 
         <!-- 行程天數 -->
@@ -65,6 +69,7 @@
             </q-item-section>
           </q-item>
         </q-list>
+        </template>
 
       </q-scroll-area>
     </q-drawer>
@@ -80,13 +85,12 @@
           v-for="tab in bottomTabs"
           :key="tab.to"
           :to="tab.to"
-          :exact="tab.exact"
           custom
-          v-slot="{ isActive, navigate }"
+          v-slot="{ isExactActive, isActive, navigate }"
         >
           <button
             class="bottom-nav-tab"
-            :class="{ active: isActive }"
+            :class="{ active: tab.exact ? isExactActive : isActive }"
             @click="navigate"
           >
             <div class="bottom-nav-pill">
@@ -103,9 +107,18 @@
 
 <script setup>
 import { ref, provide, computed } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 
 const router = useRouter()
+const route = useRoute()
+const { locale } = useI18n()
+locale.value = 'zh-TW'
+
+const toggleLocale = () => {
+  locale.value = locale.value === 'zh-TW' ? 'en-US' : 'zh-TW'
+}
+
 const activeDay = ref(1)
 const leftDrawerOpen = ref(false)
 
@@ -234,6 +247,7 @@ provide('activeDay', activeDay)
 provide('activeData', activeData)
 provide('selectDay', selectDay)
 provide('itineraryData', itineraryData)
+provide('locale', locale)
 </script>
 
 <style scoped>

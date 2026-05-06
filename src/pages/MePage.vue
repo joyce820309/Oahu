@@ -33,7 +33,6 @@ const menuItems = [
   { label: 'Trip settings', icon: 'settings' },
   { label: 'Notifications', icon: 'notifications' },
   { label: 'Currency', icon: 'attach_money' },
-  { label: 'Language', icon: 'language' },
   { label: 'About Hele', icon: 'info' },
 ]
 </script>
