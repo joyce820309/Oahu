@@ -38,6 +38,8 @@ trips/
             sortOrder: 0             ← 拖曳排序用
             time: "10:40"
             title: "抵達檀香山 (HNL)"
+            location: "檀香山機場 (HNL)"
+            url: "https://www.google.com/"
             desc:  "班機抵達..."
             icon:  "flight"
             tag:   "transport"       ← 分類標籤（可選）
@@ -179,6 +181,67 @@ src/stores/
   packing.js     ← packingLists（即時監聽，支援離線寫入）
 ```
 
+---
+
+## 初始化操作流程
+
+### 第一步：上傳資料到 Firestore（只跑一次）
+
+在終端機執行：
+
+```bash
+node scripts/seed-firestore.mjs
+```
+
+成功後會看到：
+
+```
+✅ Trip document written
+✅ Day 1 written (6 events)
+✅ Day 2 written (6 events)
+...
+🎉 Seed complete!
+```
+
+### 第二步：在 Firebase Console 設定 Security Rules（無 Auth 的暫時版本）
+
+前往 Firebase Console → Firestore → **Rules**，把預設規則改成允許讀取：
+
+```js
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /trips/{tripId}/{document=**} {
+      allow read: if true;   // 任何人可讀
+      allow write: if false; // 暫時禁止寫入（之後加 Auth 再開）
+    }
+  }
+}
+```
+
+### 運作方式
+
+```
+App 啟動
+  ↓
+onSnapshot 訂閱 Firestore
+  ↓
+Firestore 資料載入 → itineraryData.value 更新 → 頁面自動更新
+  ↓
+任何裝置修改 Firestore 資料
+  ↓
+所有訂閱裝置立即收到推送 → 頁面 realtime 更新 ✅
+```
+
+載入期間會顯示靜態備用資料（`_staticData`），資料到位後無縫切換，使用者不會看到空白畫面。
+
+Firebase SDK 是純前端套件，已經打包在你的 Vue app 裡了。只要 npm run dev，app 啟動後就會自動透過 HTTPS 連到 Firebase 的雲端伺服器，不需要在本機另外跑任何 Firebase 指令。
+
+
+你的瀏覽器
+  ↕ HTTPS
+Firebase 雲端（Google 伺服器）
+firebase CLI 指令（firebase serve、firebase emulators:start）只有在你想要完全離線開發或部署到 Firebase Hosting 時才需要用到，你的情況都不需要。
 ---
 
 ## 遷移策略（現在 → Firebase）

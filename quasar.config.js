@@ -76,6 +76,19 @@ export default defineConfig((ctx) => {
           // you need to set i18n resource including paths !
           include: [fileURLToPath(new URL('./src/i18n', import.meta.url))]
         }],
+        [
+          "unplugin-auto-import/vite",
+          {
+            imports: ["vue", "vue-router", "vue-i18n", "quasar"],
+            dirs: ["./src/stores/**/**", "./src/composables/**"],
+            dts: "src/auto-imports.d.ts",
+            eslintrc: {
+              enabled: true,
+              filepath: "src/.eslintrc-auto-import.json",
+              globalsPropValue: true,
+            },
+          },
+        ],
 
         ['vite-plugin-checker', {
           eslint: {

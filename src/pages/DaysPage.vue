@@ -1,16 +1,12 @@
 <template>
   <q-page class="q-pb-xl" style="background: transparent;">
 
+
     <!-- Day chip selector: phones only -->
     <div class="day-chips-wrap lt-sm">
       <div class="day-chips-row">
-        <button
-          v-for="d in itineraryData"
-          :key="d.day"
-          class="day-chip"
-          :class="{ active: activeDay === d.day }"
-          @click="selectDay(d.day)"
-        >
+        <button v-for="d in itineraryData" :key="d.day" class="day-chip" :class="{ active: activeDay === d.day }"
+          @click="selectDay(d.day)">
           Day {{ d.day }}
         </button>
       </div>
@@ -19,16 +15,11 @@
     <!-- Itinerary tab bar: tablet only (sm, drawer hidden but not yet open) -->
     <div class="itinerary-bar gt-xs lt-md">
       <div class="itinerary-bar-inner">
-        <button
-          v-for="d in itineraryData"
-          :key="d.day"
-          class="itinerary-tab"
-          :class="{ active: activeDay === d.day }"
-          @click="selectDay(d.day)"
-        >
+        <button v-for="d in itineraryData" :key="d.day" class="itinerary-tab" :class="{ active: activeDay === d.day }"
+          @click="selectDay(d.day)">
           <span class="itinerary-tab-day">DAY {{ d.day }}</span>
           <span class="itinerary-tab-date">{{ d.date.replace('2026.', '').replace(/\s*\(.\)/, '') }}</span>
-          <span class="itinerary-tab-title">{{ d.title }}</span>
+          <span class="itinerary-tab-title">{{ loc(d, 'title') }}</span>
         </button>
       </div>
     </div>
@@ -36,47 +27,77 @@
     <!-- Day Hero -->
     <div class="q-pa-lg text-center relative-position overflow-hidden day-hero">
       <div class="text-h5 text-weight-bolder q-mb-xs relative-position" style="z-index:1; color: #fff;">
-        {{ activeData.title }}
+        {{ loc(activeData, 'title') }}
       </div>
       <div class="text-subtitle2 text-weight-medium relative-position" style="z-index:1; opacity:0.82; color: #fff;">
         Day {{ activeDay }} · {{ activeData.date }}
       </div>
+      <!-- Edit pencil button -->
+      <button v-if="!editMode" class="edit-fab" @click="enterEditMode" :aria-label="t('days_edit_hint')">
+        <q-icon name="edit" size="18px" />
+      </button>
     </div>
+
+    <!-- Edit mode banner -->
+    <Transition name="edit-banner">
+      <div v-if="editMode" class="edit-banner">
+        <div class="edit-banner-left">
+          <q-icon name="drag_indicator" size="18px" style="opacity:0.7;" />
+          <span>{{ t('days_edit_hint') }}</span>
+        </div>
+        <button class="edit-done-btn" @click="exitEditMode">
+          {{ t('days_edit_done') }}
+        </button>
+      </div>
+    </Transition>
 
     <!-- Timeline -->
     <div style="padding: 16px; max-width: 800px; margin: 0 auto;">
 
-      <!-- Custom timeline -->
-      <div class="timeline">
-        <div
-          v-for="(event, idx) in activeData.events"
-          :key="idx"
-          class="timeline-row"
-        >
+      <VueDraggable v-model="localEvents" :disabled="!editMode" :animation="180" ghost-class="dnd-ghost-row"
+        chosen-class="dnd-chosen-row" class="timeline" :class="{ 'timeline-edit': editMode }">
+        <div v-for="(event, idx) in localEvents" :key="event.time" class="timeline-row">
+
           <!-- Time column -->
-          <div class="timeline-time">
+          <div class="timeline-time" :class="{ 'timeline-time-edit': editMode }">
             <div style="font-size: 12px; font-weight: 600; color: var(--ink);">{{ event.time }}</div>
           </div>
 
           <!-- Dot -->
           <div class="timeline-dot-col">
-            <div class="timeline-line" v-if="idx < activeData.events.length - 1" />
+            <div class="timeline-line" v-if="idx < localEvents.length - 1" />
             <div class="timeline-dot">
               <q-icon :name="event.icon" size="14px" style="color: var(--accent-deep);" />
             </div>
           </div>
 
           <!-- Card -->
-          <div class="glass-strong timeline-card">
-            <div style="font-size: 14px; font-weight: 600; color: var(--ink); margin-bottom: 4px;">
-              {{ event.title }}
+          <div class="glass-strong timeline-card" :class="{ expanded: expandedIdx === idx && !editMode }"
+            @click="!editMode && toggleExpand(idx)" @pointerdown="longPressDown">
+            <div class="card-collapsed">
+              <div class="card-title">{{ loc(event, 'title') }}</div>
+              <div v-if="loc(event, 'location')" class="card-location">
+                <q-icon name="place" size="12px" style="margin-right: 3px; flex-shrink: 0;" />
+                {{ loc(event, 'location') }}
+              </div>
             </div>
-            <div style="font-size: 13px; color: var(--ink-mute); line-height: 1.5;">
-              {{ event.desc }}
+
+            <div v-if="expandedIdx === idx && !editMode" class="card-expanded">
+              <div class="card-divider" />
+              <div class="card-desc">{{ loc(event, 'desc') }}</div>
+              <a v-if="event.url" :href="event.url" target="_blank" rel="noopener" class="card-url" @click.stop>
+                <q-icon name="open_in_new" size="12px" style="margin-right: 4px;" />
+                {{ t('days_official_site') }}
+              </a>
+            </div>
+
+            <div v-if="!editMode" class="card-chevron">
+              <q-icon :name="expandedIdx === idx ? 'expand_less' : 'expand_more'" size="16px"
+                style="color: var(--ink-faint);" />
             </div>
           </div>
         </div>
-      </div>
+      </VueDraggable>
 
       <!-- Day 2：UTV 注意事項 -->
       <div v-if="activeDay === 2" class="tip-card tip-card-orange q-mt-lg">
@@ -84,17 +105,17 @@
           <div class="tip-icon-circle" style="background: var(--warm-soft); color: var(--warm);">
             <q-icon name="info" size="18px" />
           </div>
-          <span style="font-size: 16px; font-weight: 700; color: var(--ink);">UTV 越野車之旅注意事項</span>
+          <span style="font-size: 16px; font-weight: 700; color: var(--ink);">{{ t('day2_tip_title') }}</span>
         </div>
         <div style="font-size: 13px; color: var(--ink-soft); line-height: 1.6;">
-          <p style="margin: 0 0 8px;">你選擇了最熱門刺激的 UTV Raptor Tour！請務必注意：</p>
+          <p style="margin: 0 0 8px;">{{ t('day2_tip_intro') }}</p>
           <ul style="margin: 0; padding-left: 16px;">
-            <li class="q-mb-xs"><strong>一定會弄髒：</strong> 紅土灰塵，千萬不要穿白衣服或新鞋子。</li>
-            <li class="q-mb-xs"><strong>攜帶備品：</strong> 帶一套乾淨衣服和濕紙巾，結束後換上再去吃蝦飯。</li>
-            <li class="q-mb-xs"><strong>必備防護：</strong> 出發前塗好防曬，貴重物品放置物櫃。</li>
+            <li class="q-mb-xs"><strong>{{ t('day2_tip_1_label') }}</strong> {{ t('day2_tip_1') }}</li>
+            <li class="q-mb-xs"><strong>{{ t('day2_tip_2_label') }}</strong> {{ t('day2_tip_2') }}</li>
+            <li class="q-mb-xs"><strong>{{ t('day2_tip_3_label') }}</strong> {{ t('day2_tip_3') }}</li>
           </ul>
           <div style="font-size: 11px; color: var(--warm); margin-top: 8px; font-weight: 500;">
-            *行程極度搶手，請至少提前 1.5–2 個月在官網預訂！
+            {{ t('day2_tip_note') }}
           </div>
         </div>
       </div>
@@ -105,16 +126,16 @@
           <div class="tip-icon-circle" style="background: var(--hibiscus-soft); color: var(--hibiscus);">
             <q-icon name="shopping_bag" size="18px" />
           </div>
-          <span style="font-size: 16px; font-weight: 700; color: var(--ink);">美系彩妝購物攻略</span>
+          <span style="font-size: 16px; font-weight: 700; color: var(--ink);">{{ t('day3_tip_title') }}</span>
         </div>
         <div style="font-size: 13px; color: var(--ink-soft); line-height: 1.6;">
-          <p style="margin: 0 0 8px;">來美國買美系彩妝非常划算，推薦兩個必去的地方：</p>
+          <p style="margin: 0 0 8px;">{{ t('day3_tip_intro') }}</p>
           <ul style="margin: 0; padding-left: 16px;">
-            <li class="q-mb-xs"><strong>百貨公司：</strong> Ala Moana 內的 Macy's 或 Nordstrom 專櫃常有獨家折扣。</li>
-            <li class="q-mb-xs"><strong>Sephora：</strong> 一次試用各大品牌最方便。</li>
+            <li class="q-mb-xs"><strong>{{ t('day3_tip_1_label') }}</strong> {{ t('day3_tip_1') }}</li>
+            <li class="q-mb-xs"><strong>{{ t('day3_tip_2_label') }}</strong> {{ t('day3_tip_2') }}</li>
           </ul>
           <div style="font-size: 11px; color: var(--hibiscus); margin-top: 8px; font-weight: 500;">
-            夏威夷州稅僅約 4.712%，全美最低之一！
+            {{ t('day3_tip_note') }}
           </div>
         </div>
       </div>
@@ -126,13 +147,13 @@
             <div class="tip-icon-circle" style="background: var(--lagoon-soft); color: var(--lagoon);">
               <q-icon name="waves" size="18px" />
             </div>
-            <span style="font-size: 16px; font-weight: 700; color: var(--ink);">恐龍灣 (Hanauma Bay) 預約戰略</span>
+            <span style="font-size: 16px; font-weight: 700; color: var(--ink);">{{ t('day4_tip1_title') }}</span>
           </div>
           <div style="font-size: 13px; color: var(--ink-soft); line-height: 1.6;">
             <ul style="margin: 0; padding-left: 16px;">
-              <li class="q-mb-xs"><strong>預約時間：</strong> 入園前 2 天的夏威夷早上 7:00（台灣時間隔天凌晨 1:00）搶票，通常 5 分鐘秒殺！</li>
-              <li class="q-mb-xs"><strong>防曬規定：</strong> 只能使用「海洋友善」防曬乳，建議穿長袖水母衣。</li>
-              <li class="q-mb-xs"><strong>裝備：</strong> 現場可租借浮潛面罩和蛙鞋。</li>
+              <li class="q-mb-xs"><strong>{{ t('day4_tip1_1_label') }}</strong> {{ t('day4_tip1_1') }}</li>
+              <li class="q-mb-xs"><strong>{{ t('day4_tip1_2_label') }}</strong> {{ t('day4_tip1_2') }}</li>
+              <li class="q-mb-xs"><strong>{{ t('day4_tip1_3_label') }}</strong> {{ t('day4_tip1_3') }}</li>
             </ul>
           </div>
         </div>
@@ -141,11 +162,11 @@
             <div class="tip-icon-circle" style="background: var(--lagoon-soft); color: var(--lagoon);">
               <q-icon name="beach_access" size="18px" />
             </div>
-            <span style="font-size: 16px; font-weight: 700; color: var(--ink);">沙灘耍廢地點差異</span>
+            <span style="font-size: 16px; font-weight: 700; color: var(--ink);">{{ t('day4_tip2_title') }}</span>
           </div>
           <div style="font-size: 13px; color: var(--ink-soft); line-height: 1.6;">
-            <p style="margin: 0 0 6px;">🏖️ <strong>Day 1 威基基海灘：</strong> 熱鬧、方便，適合喝杯飲料看熱鬧。</p>
-            <p style="margin: 0;">🏝️ <strong>Day 4 蘭尼凱海灘：</strong> 無商業設施，最細白沙和清澈海水，適合極度安靜耍廢。</p>
+            <p style="margin: 0 0 6px;">{{ t('day4_tip2_waikiki') }}</p>
+            <p style="margin: 0;">{{ t('day4_tip2_lanikai') }}</p>
           </div>
         </div>
       </div>
@@ -156,30 +177,78 @@
           <div class="tip-icon-circle" style="background: var(--leaf-soft); color: var(--leaf);">
             <q-icon name="place" size="18px" />
           </div>
-          <span style="font-size: 16px; font-weight: 700; color: var(--ink);">騎馬體驗小建議</span>
+          <span style="font-size: 16px; font-weight: 700; color: var(--ink);">{{ t('day6_tip_title') }}</span>
         </div>
         <div style="font-size: 13px; color: var(--ink-soft); line-height: 1.6;">
           <ul style="margin: 0; padding-left: 16px;">
-            <li class="q-mb-xs"><strong>Turtle Bay Resort：</strong> 沿著絕美海岸線騎乘，聽著海浪聲，非常浪漫。</li>
-            <li class="q-mb-xs"><strong>Gunstock Ranch：</strong> 山林與海景結合的騎馬路線，適合初學者。</li>
+            <li class="q-mb-xs"><strong>{{ t('day6_tip_1_label') }}</strong> {{ t('day6_tip_1') }}</li>
+            <li class="q-mb-xs"><strong>{{ t('day6_tip_2_label') }}</strong> {{ t('day6_tip_2') }}</li>
           </ul>
           <div style="font-size: 11px; color: var(--leaf); margin-top: 8px; font-weight: 500;">
-            需穿著包鞋（運動鞋）和長褲，並做好防曬措施。
+            {{ t('day6_tip_note') }}
           </div>
         </div>
       </div>
 
     </div>
+
+
   </q-page>
 </template>
 
 <script setup>
-import { inject } from 'vue'
+import { useTripStore } from 'src/stores/trip-store'
+import { useLongPress } from 'src/composables/useLongPress'
+import { useQuasar } from 'quasar'
+import { VueDraggable } from 'vue-draggable-plus'
+
+const { t } = useI18n()
+const $q = useQuasar()
 
 const activeDay = inject('activeDay')
 const activeData = inject('activeData')
 const selectDay = inject('selectDay')
 const itineraryData = inject('itineraryData')
+const loc = inject('loc')
+
+const tripStore = useTripStore()
+
+// ── Expand ────────────────────────────────────────────────
+const expandedIdx = ref(null)
+const toggleExpand = (idx) => {
+  expandedIdx.value = expandedIdx.value === idx ? null : idx
+}
+watch(activeDay, () => { expandedIdx.value = null })
+
+// ── Edit mode ─────────────────────────────────────────────
+const editMode = ref(false)
+// Working copy of events for the current day (reset when day changes or edit starts)
+const localEvents = ref([])
+
+watch(
+  activeData,
+  (data) => {
+    localEvents.value = data.events ? [...data.events] : []
+  },
+  { immediate: true, deep: true },
+)
+
+function enterEditMode() {
+  if (editMode.value) return
+  localEvents.value = activeData.value.events ? [...activeData.value.events] : []
+  editMode.value = true
+}
+
+const { onPointerDown: longPressDown } = useLongPress(() => {
+  if ($q.screen.lt.md) enterEditMode()
+})
+
+async function exitEditMode() {
+  editMode.value = false
+  const dayId = activeData.value.id
+  if (!dayId) return
+  await tripStore.reorderEvents(dayId, localEvents.value)
+}
 </script>
 
 <style scoped>
@@ -200,7 +269,10 @@ const itineraryData = inject('itineraryData')
   padding: 0 20px;
   scrollbar-width: none;
 }
-.itinerary-bar-inner::-webkit-scrollbar { display: none; }
+
+.itinerary-bar-inner::-webkit-scrollbar {
+  display: none;
+}
 
 .itinerary-tab {
   display: flex;
@@ -276,7 +348,10 @@ const itineraryData = inject('itineraryData')
   padding: 0 16px;
   scrollbar-width: none;
 }
-.day-chips-row::-webkit-scrollbar { display: none; }
+
+.day-chips-row::-webkit-scrollbar {
+  display: none;
+}
 
 .day-chip {
   padding: 8px 14px;
@@ -301,10 +376,89 @@ const itineraryData = inject('itineraryData')
   border-color: var(--ink);
 }
 
+/* ── Edit FAB ── */
+.edit-fab {
+  position: absolute;
+  bottom: 12px;
+  right: 14px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.22);
+  border: 1px solid rgba(255, 255, 255, 0.38);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  transition: background 0.18s;
+  z-index: 2;
+}
+
+.edit-fab:active {
+  background: rgba(255, 255, 255, 0.35);
+}
+
+/* ── Edit mode banner ── */
+.edit-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px;
+  background: var(--accent-soft);
+  border-bottom: 1px solid var(--accent);
+  gap: 12px;
+}
+
+.edit-banner-left {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink-soft);
+}
+
+.edit-done-btn {
+  flex-shrink: 0;
+  padding: 6px 18px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  border: none;
+  cursor: pointer;
+  font-family: var(--font-sans);
+  transition: opacity 0.15s;
+}
+
+.edit-done-btn:active {
+  opacity: 0.8;
+}
+
+.edit-banner-enter-active,
+.edit-banner-leave-active {
+  transition: all 0.22s ease;
+}
+
+.edit-banner-enter-from,
+.edit-banner-leave-to {
+  opacity: 0;
+  transform: translateY(-6px);
+}
+
 /* ── Timeline ── */
 .timeline {
   position: relative;
   padding: 8px 0;
+}
+
+.timeline-edit {
+  touch-action: none;
+  user-select: none;
 }
 
 .timeline-row {
@@ -312,6 +466,19 @@ const itineraryData = inject('itineraryData')
   gap: 10px;
   margin-bottom: 10px;
   position: relative;
+  transition: opacity 0.15s;
+}
+
+/* SortableJS ghost (placeholder left in list while dragging) */
+.dnd-ghost-row {
+  opacity: 0.35;
+}
+
+/* SortableJS chosen (the item being dragged) */
+.dnd-chosen-row {
+  outline: 2px solid var(--accent);
+  border-radius: 16px;
+  background: var(--accent-soft);
 }
 
 .timeline-time {
@@ -319,6 +486,10 @@ const itineraryData = inject('itineraryData')
   width: 46px;
   text-align: right;
   padding-top: 14px;
+}
+
+.timeline-time-edit {
+  width: 36px;
 }
 
 .timeline-dot-col {
@@ -356,8 +527,95 @@ const itineraryData = inject('itineraryData')
 
 .timeline-card {
   flex: 1;
-  padding: 14px;
+  padding: 12px 14px 10px;
   text-align: left;
+  cursor: pointer;
+  position: relative;
+  transition: box-shadow 0.2s;
+}
+
+.timeline-edit .timeline-card {
+  cursor: grab;
+}
+
+.timeline-edit .timeline-card:active {
+  cursor: grabbing;
+}
+
+.timeline-card.expanded {
+  box-shadow: 0 4px 20px rgba(255, 157, 92, 0.18);
+}
+
+/* ── Drag handle ── */
+.drag-handle {
+  flex-shrink: 0;
+  width: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: grab;
+  touch-action: none;
+}
+
+.drag-handle:active {
+  cursor: grabbing;
+}
+
+
+.card-collapsed {
+  padding-right: 20px;
+}
+
+.card-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink);
+  margin-bottom: 4px;
+  line-height: 1.4;
+}
+
+.card-location {
+  display: flex;
+  align-items: center;
+  font-size: 11px;
+  color: var(--ink-mute);
+  line-height: 1.3;
+}
+
+.card-divider {
+  height: 1px;
+  background: var(--surface-stroke);
+  margin: 10px 0;
+}
+
+.card-desc {
+  font-size: 13px;
+  color: var(--ink-soft);
+  line-height: 1.6;
+  margin-bottom: 10px;
+}
+
+.card-url {
+  display: inline-flex;
+  align-items: center;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--accent-deep);
+  text-decoration: none;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  transition: opacity 0.15s;
+}
+
+.card-url:active {
+  opacity: 0.7;
+}
+
+.card-chevron {
+  position: absolute;
+  top: 12px;
+  right: 10px;
 }
 
 /* ── Tip cards ── */
@@ -368,10 +626,21 @@ const itineraryData = inject('itineraryData')
   -webkit-backdrop-filter: blur(var(--blur)) saturate(150%);
 }
 
-.tip-card-orange { background: var(--warm-soft); }
-.tip-card-pink   { background: var(--hibiscus-soft); }
-.tip-card-blue   { background: var(--lagoon-soft); }
-.tip-card-green  { background: var(--leaf-soft); }
+.tip-card-orange {
+  background: var(--warm-soft);
+}
+
+.tip-card-pink {
+  background: var(--hibiscus-soft);
+}
+
+.tip-card-blue {
+  background: var(--lagoon-soft);
+}
+
+.tip-card-green {
+  background: var(--leaf-soft);
+}
 
 .tip-card-header {
   display: flex;

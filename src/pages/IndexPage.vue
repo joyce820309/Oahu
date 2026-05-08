@@ -1,6 +1,6 @@
 <template>
   <q-page class="q-pb-xl">
-    
+
     <div class="bg-teal-1 q-pa-xl text-center relative-position overflow-hidden day-hero">
       <div class="text-h4 text-teal-9 text-weight-bolder q-mb-sm relative-position" style="z-index: 1;">
         {{ activeData.title }}
@@ -11,15 +11,10 @@
     </div>
 
     <div class="q-pa-md q-pa-md-xl" style="max-width: 800px; margin: 0 auto;">
-      
+
       <q-timeline color="teal-6" layout="dense" class="q-mb-xl q-ml-sm">
-        <q-timeline-entry
-          v-for="(event, idx) in activeData.events"
-          :key="idx"
-          :icon="event.icon"
-          :title="event.title"
-          :subtitle="event.time"
-        >
+        <q-timeline-entry v-for="(event, idx) in activeData.events" :key="idx" :icon="event.icon" :title="event.title"
+          :subtitle="event.time">
           <q-card flat bordered class="q-mt-sm bg-white">
             <q-card-section class="text-body1 text-grey-8">
               {{ event.desc }}
@@ -73,7 +68,8 @@
             </div>
             <div class="text-body2 text-light-blue-10">
               <ul class="q-pl-md">
-                <li class="q-mb-xs"><strong>預約時間：</strong> 必須在入園前 <strong>2 天的夏威夷早上 7:00</strong> (台灣時間隔天凌晨 1:00) 搶票，通常5分鐘內秒殺！</li>
+                <li class="q-mb-xs"><strong>預約時間：</strong> 必須在入園前 <strong>2 天的夏威夷早上 7:00</strong> (台灣時間隔天凌晨 1:00)
+                  搶票，通常5分鐘內秒殺！</li>
                 <li class="q-mb-xs"><strong>防曬規定：</strong> 只能使用「海洋友善」防曬乳，建議穿長袖水母衣。</li>
                 <li class="q-mb-xs"><strong>裝備：</strong> 現場可租借浮潛面罩和蛙鞋。</li>
               </ul>
@@ -88,7 +84,8 @@
             </div>
             <div class="text-body2 text-light-blue-10">
               <p class="q-mb-sm">🏖️ <strong>Day 1 威基基海灘 (Waikiki)：</strong> 飯店正前方。熱鬧、方便，適合喝杯飲料看熱鬧。</p>
-              <p class="q-mb-none">🏝️ <strong>Day 4 蘭尼凱海灘 (Lanikai)：</strong> 隱藏在高級住宅區旁。無商業設施，有最細白沙和清澈海水，適合「極度安靜耍廢」。</p>
+              <p class="q-mb-none">🏝️ <strong>Day 4 蘭尼凱海灘 (Lanikai)：</strong> 隱藏在高級住宅區旁。無商業設施，有最細白沙和清澈海水，適合「極度安靜耍廢」。
+              </p>
             </div>
           </q-card-section>
         </q-card>
@@ -116,7 +113,6 @@
 </template>
 
 <script setup>
-import { inject } from 'vue'
 
 // 從 MainLayout 注入狀態
 const activeDay = inject('activeDay')

@@ -1,21 +1,21 @@
-import { defineStore, acceptHMRUpdate } from 'pinia'
+import { defineStore } from "pinia";
+import { ref } from "vue";
 
-export const useCounterStore = defineStore('counter', {
-  state: () => ({
-    counter: 0
-  }),
+export const useUiStore = defineStore("ui", () => {
+  const sidebarOpen = ref(true);
+  const sidebarCollapsed = ref(false);
 
-  getters: {
-    doubleCount: (state) => state.counter * 2
-  },
-
-  actions: {
-    increment() {
-      this.counter++
-    }
+  function toggleSidebar() {
+    sidebarOpen.value = !sidebarOpen.value;
   }
-})
+  function toggleCollapse() {
+    sidebarCollapsed.value = !sidebarCollapsed.value;
+  }
 
-if (import.meta.hot) {
-  import.meta.hot.accept(acceptHMRUpdate(useCounterStore, import.meta.hot))
-}
+  return {
+    sidebarOpen,
+    sidebarCollapsed,
+    toggleSidebar,
+    toggleCollapse,
+  };
+});

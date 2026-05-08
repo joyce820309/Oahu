@@ -15,10 +15,10 @@
           </div>
           <!-- SVG circular progress -->
           <svg width="56" height="56" viewBox="0 0 56 56">
-            <circle cx="28" cy="28" r="22" fill="none" stroke="var(--surface-stroke)" stroke-width="4"/>
+            <circle cx="28" cy="28" r="22" fill="none" stroke="var(--surface-stroke)" stroke-width="4" />
             <circle cx="28" cy="28" r="22" fill="none" stroke="var(--accent)" stroke-width="4"
-              :stroke-dasharray="`${(pct / 100) * 138.2} 138.2`"
-              stroke-linecap="round" transform="rotate(-90 28 28)" style="transition: stroke-dasharray 0.4s ease;"/>
+              :stroke-dasharray="`${(pct / 100) * 138.2} 138.2`" stroke-linecap="round" transform="rotate(-90 28 28)"
+              style="transition: stroke-dasharray 0.4s ease;" />
           </svg>
         </div>
       </div>
@@ -28,24 +28,21 @@
         <div class="row justify-between items-center" style="margin-bottom: 10px;">
           <div style="font-size: 14px; font-weight: 700; color: var(--ink);">{{ group.label }}</div>
           <div style="font-size: 12px; color: var(--ink-mute);">
-            {{ group.items.filter(i => i.done).length }}/{{ group.items.length }}
+            {{group.items.filter(i => i.done).length}}/{{ group.items.length }}
           </div>
         </div>
         <div class="glass-strong" style="padding: 4px 0;">
-          <div
-            v-for="item in group.items"
-            :key="item.name"
-            class="pack-item"
-            @click="item.done = !item.done"
-          >
+          <div v-for="item in group.items" :key="item.name" class="pack-item" @click="item.done = !item.done">
             <div class="pack-check" :class="{ checked: item.done }">
               <q-icon v-if="item.done" name="check" size="12px" style="color: #fff;" />
             </div>
             <div style="flex: 1; min-width: 0;">
-              <div :style="{ textDecoration: item.done ? 'line-through' : 'none', color: item.done ? 'var(--ink-mute)' : 'var(--ink)', fontSize: '14px', fontWeight: 500, transition: 'all 0.2s' }">
+              <div
+                :style="{ textDecoration: item.done ? 'line-through' : 'none', color: item.done ? 'var(--ink-mute)' : 'var(--ink)', fontSize: '14px', fontWeight: 500, transition: 'all 0.2s' }">
                 {{ item.name }}
               </div>
-              <div v-if="item.note" style="font-size: 11px; color: var(--accent); margin-top: 2px;">{{ item.note }}</div>
+              <div v-if="item.note" style="font-size: 11px; color: var(--accent); margin-top: 2px;">{{ item.note }}
+              </div>
             </div>
           </div>
         </div>
@@ -56,8 +53,6 @@
 </template>
 
 <script setup>
-import { reactive, computed } from 'vue'
-
 const packGroups = reactive([
   {
     label: 'Essentials',
@@ -103,9 +98,13 @@ const pct = computed(() => Math.round(packedCount.value / total.value * 100))
   transition: background 0.15s;
 }
 
-.pack-item:last-child { border-bottom: none; }
+.pack-item:last-child {
+  border-bottom: none;
+}
 
-.pack-item:active { background: var(--surface-stroke); }
+.pack-item:active {
+  background: var(--surface-stroke);
+}
 
 .pack-check {
   width: 22px;

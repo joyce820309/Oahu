@@ -3,6 +3,10 @@ import globals from 'globals'
 import pluginVue from 'eslint-plugin-vue'
 import pluginQuasar from '@quasar/app-vite/eslint'
 import prettierSkipFormatting from '@vue/eslint-config-prettier/skip-formatting'
+import { createRequire } from 'module'
+
+const require = createRequire(import.meta.url)
+const autoImportGlobals = require('./src/.eslintrc-auto-import.json')
 
 export default [
   {
@@ -42,6 +46,7 @@ export default [
       globals: {
         ...globals.browser,
         ...globals.node, // SSR, Electron, config files
+        ...autoImportGlobals.globals,
         process: 'readonly', // process.env.*
         ga: 'readonly', // Google Analytics
         cordova: 'readonly',
