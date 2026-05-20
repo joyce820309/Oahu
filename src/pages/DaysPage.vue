@@ -25,15 +25,30 @@
     </div>
 
     <!-- Day Hero -->
-    <div class="q-pa-lg text-center relative-position overflow-hidden day-hero">
-      <div class="text-h5 text-weight-bolder q-mb-xs relative-position" style="z-index:1; color: #fff;">
-        {{ loc(activeData, 'title') }}
+    <div class="relative-position overflow-hidden day-hero">
+      <!-- 標題文字：平板以上才顯示 -->
+      <div class="gt-xs q-pa-lg text-center">
+        <div class="text-h5 text-weight-bolder q-mb-xs relative-position" style="z-index:1; color: #fff;">
+          {{ loc(activeData, 'title') }}
+        </div>
+        <div class="text-subtitle2 text-weight-medium relative-position" style="z-index:1; opacity:0.82; color: #fff;">
+          Day {{ activeDay }} · {{ activeData.date }}
+        </div>
       </div>
-      <div class="text-subtitle2 text-weight-medium relative-position" style="z-index:1; opacity:0.82; color: #fff;">
-        Day {{ activeDay }} · {{ activeData.date }}
+      <!-- 手機：只顯示日期小標 + 按鈕，緊湊高度 -->
+      <div class="lt-sm hero-compact-bar">
+        <span class="hero-compact-label">Day {{ activeDay }} · {{ activeData.date }}</span>
+        <div style="display: flex; gap: 8px;">
+          <button class="edit-fab" @click="openAddEvent" :aria-label="t('days_add_event')">
+            <q-icon name="add" size="18px" />
+          </button>
+          <button v-if="!editMode" class="edit-fab" @click="enterEditMode" :aria-label="t('days_edit_hint')">
+            <q-icon name="drag_indicator" size="18px" />
+          </button>
+        </div>
       </div>
-      <!-- Buttons -->
-      <div style="position: absolute; bottom: 12px; right: 14px; display: flex; gap: 8px; z-index: 2;">
+      <!-- 平板以上的按鈕 -->
+      <div class="gt-xs" style="position: absolute; bottom: 12px; right: 14px; display: flex; gap: 8px; z-index: 2;">
         <button class="edit-fab" @click="openAddEvent" :aria-label="t('days_add_event')">
           <q-icon name="add" size="18px" />
         </button>
@@ -60,7 +75,8 @@
     <div style="padding: 16px; max-width: 800px; margin: 0 auto;">
 
       <VueDraggable v-model="localEvents" :disabled="!editMode" :animation="180" ghost-class="dnd-ghost-row"
-        chosen-class="dnd-chosen-row" class="timeline" :class="{ 'timeline-edit': editMode }">
+        chosen-class="dnd-chosen-row" class="timeline" :class="{ 'timeline-edit': editMode }"
+        @move="onDragMove" @end="stopAutoScroll">
         <div v-for="(event, idx) in localEvents" :key="idx" class="timeline-row">
 
           <!-- Time column -->
@@ -396,10 +412,50 @@ const { onPointerDown: longPressDown } = useLongPress(() => {
 })
 
 async function exitEditMode() {
+  stopAutoScroll()
   editMode.value = false
   const dayId = activeData.value.id
   if (!dayId) return
   await tripStore.reorderEvents(dayId, localEvents.value)
+}
+
+// ── Auto-scroll while dragging near screen edges ──────────
+let scrollRaf = null
+
+function stopAutoScroll() {
+  if (scrollRaf) {
+    cancelAnimationFrame(scrollRaf)
+    scrollRaf = null
+  }
+}
+
+function onDragMove(evt) {
+  if (!editMode.value) return
+  const clientY = evt.originalEvent?.touches?.[0]?.clientY ?? evt.originalEvent?.clientY
+  if (clientY == null) return
+
+  const ZONE = 80      // px from edge that triggers scroll
+  const MAX_SPEED = 12 // px per frame
+
+  stopAutoScroll()
+
+  const scroll = () => {
+    const vy = window.innerHeight - clientY
+    const vt = clientY
+
+    if (vt < ZONE) {
+      // near top → scroll up
+      const speed = Math.round(MAX_SPEED * (1 - vt / ZONE))
+      window.scrollBy(0, -speed)
+      scrollRaf = requestAnimationFrame(scroll)
+    } else if (vy < ZONE) {
+      // near bottom → scroll down
+      const speed = Math.round(MAX_SPEED * (1 - vy / ZONE))
+      window.scrollBy(0, speed)
+      scrollRaf = requestAnimationFrame(scroll)
+    }
+  }
+  scroll()
 }
 
 // ── Event icons ───────────────────────────────────────────
@@ -642,6 +698,23 @@ async function executeDeleteEvent() {
   background: var(--ink);
   color: var(--bg);
   border-color: var(--ink);
+}
+
+/* ── Hero compact bar (phones) ── */
+.hero-compact-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  z-index: 2;
+  position: relative;
+}
+
+.hero-compact-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(255,255,255,0.85);
+  letter-spacing: 0.02em;
 }
 
 /* ── Edit FAB ── */
