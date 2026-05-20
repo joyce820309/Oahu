@@ -234,6 +234,15 @@
 }
 
 /* ================================================
+   Form inputs — global overrides
+   ================================================ */
+
+/* rounded outlined inputs: 10px instead of Quasar default 28px */
+.q-field--outlined.q-field--rounded .q-field__control {
+  border-radius: 10px !important;
+}
+
+/* ================================================
    Bottom Navigation (phones only)
    ================================================ */
 

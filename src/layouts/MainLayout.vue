@@ -65,7 +65,11 @@
     </q-drawer>
 
     <q-page-container>
-      <router-view />
+      <router-view v-slot="{ Component }">
+        <keep-alive>
+          <component :is="Component" />
+        </keep-alive>
+      </router-view>
     </q-page-container>
 
     <!-- 底部導覽列：僅手機 (xs < 600px) -->
@@ -132,6 +136,7 @@ const toggleLeftDrawer = () => {
 const navPages = [
   { to: '/', labelKey: 'nav_trip', icon: 'home', exact: true },
   { to: '/days', labelKey: 'nav_days', icon: 'event', exact: false },
+  { to: '/booking', labelKey: 'nav_booking', icon: 'confirmation_number', exact: false },
   { to: '/explore', labelKey: 'nav_explore', icon: 'travel_explore', exact: false },
   { to: '/pack', labelKey: 'nav_pack', icon: 'backpack', exact: false },
   { to: '/me', labelKey: 'nav_me', icon: 'person', exact: false },

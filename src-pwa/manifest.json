@@ -1,7 +1,12 @@
 {
+  "name": "Oahu Trip Planner",
+  "short_name": "Oahu",
+  "description": "夏威夷歐胡島行程規劃",
+  "display": "standalone",
+  "start_url": "/",
   "orientation": "portrait",
-  "background_color": "#ffffff",
-  "theme_color": "#027be3",
+  "background_color": "#f7eedb",
+  "theme_color": "#56C6CC",
   "icons": [
     {
       "src": "icons/icon-128x128.png",

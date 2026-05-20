@@ -2,13 +2,13 @@ import { initializeApp } from 'firebase/app'
 import { getFirestore } from 'firebase/firestore'
 
 const firebaseConfig = {
-  apiKey: 'AIzaSyBJQ5-sRSnJKgrdD_-5MMxogYam1LnKFL8',
-  authDomain: 'hawaii-app-4fe27.firebaseapp.com',
-  projectId: 'hawaii-app-4fe27',
-  storageBucket: 'hawaii-app-4fe27.firebasestorage.app',
-  messagingSenderId: '68447221865',
-  appId: '1:68447221865:web:bddc3ff54919a3ae064af8',
-  measurementId: 'G-ECJF9RBJJE',
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID,
 }
 
 const app = initializeApp(firebaseConfig)

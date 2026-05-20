@@ -30,6 +30,7 @@ yarn-error.log*
 *.sln
 
 # local .env files
+.env
 .env.local*
 
 # Claude Code per-user local settings (each developer has their own)

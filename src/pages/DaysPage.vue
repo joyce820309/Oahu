@@ -32,10 +32,15 @@
       <div class="text-subtitle2 text-weight-medium relative-position" style="z-index:1; opacity:0.82; color: #fff;">
         Day {{ activeDay }} · {{ activeData.date }}
       </div>
-      <!-- Edit pencil button -->
-      <button v-if="!editMode" class="edit-fab" @click="enterEditMode" :aria-label="t('days_edit_hint')">
-        <q-icon name="edit" size="18px" />
-      </button>
+      <!-- Buttons -->
+      <div style="position: absolute; bottom: 12px; right: 14px; display: flex; gap: 8px; z-index: 2;">
+        <button class="edit-fab" @click="openAddEvent" :aria-label="t('days_add_event')">
+          <q-icon name="add" size="18px" />
+        </button>
+        <button v-if="!editMode" class="edit-fab" @click="enterEditMode" :aria-label="t('days_edit_hint')">
+          <q-icon name="drag_indicator" size="18px" />
+        </button>
+      </div>
     </div>
 
     <!-- Edit mode banner -->
@@ -56,11 +61,16 @@
 
       <VueDraggable v-model="localEvents" :disabled="!editMode" :animation="180" ghost-class="dnd-ghost-row"
         chosen-class="dnd-chosen-row" class="timeline" :class="{ 'timeline-edit': editMode }">
-        <div v-for="(event, idx) in localEvents" :key="event.time" class="timeline-row">
+        <div v-for="(event, idx) in localEvents" :key="idx" class="timeline-row">
 
           <!-- Time column -->
           <div class="timeline-time" :class="{ 'timeline-time-edit': editMode }">
-            <div style="font-size: 12px; font-weight: 600; color: var(--ink);">{{ event.time }}</div>
+            <div style="font-size: 12px; font-weight: 600; color: var(--ink); white-space: nowrap;">
+              {{ event.timeStart || event.time || '' }}
+            </div>
+            <div v-if="event.timeEnd" style="font-size: 10px; color: var(--ink-mute); margin-top: 2px; white-space: nowrap;">
+              {{ event.timeEnd }}
+            </div>
           </div>
 
           <!-- Dot -->
@@ -73,8 +83,10 @@
 
           <!-- Card -->
           <div class="glass-strong timeline-card" :class="{ expanded: expandedIdx === idx && !editMode }"
-            @click="!editMode && toggleExpand(idx)" @pointerdown="longPressDown">
-            <div class="card-collapsed">
+            @pointerdown="longPressDown">
+
+            <!-- Header: 只有這裡觸發展開收起 -->
+            <div class="card-collapsed" @click="!editMode && toggleExpand(idx)">
               <div class="card-title">{{ loc(event, 'title') }}</div>
               <div v-if="loc(event, 'location')" class="card-location">
                 <q-icon name="place" size="12px" style="margin-right: 3px; flex-shrink: 0;" />
@@ -82,16 +94,30 @@
               </div>
             </div>
 
+            <!-- Expanded content: 不觸發展開收起 -->
             <div v-if="expandedIdx === idx && !editMode" class="card-expanded">
               <div class="card-divider" />
-              <div class="card-desc">{{ loc(event, 'desc') }}</div>
-              <a v-if="event.url" :href="event.url" target="_blank" rel="noopener" class="card-url" @click.stop>
-                <q-icon name="open_in_new" size="12px" style="margin-right: 4px;" />
-                {{ t('days_official_site') }}
-              </a>
+              <div v-if="loc(event, 'desc')" class="card-desc">{{ loc(event, 'desc') }}</div>
+              <div class="card-actions-row">
+                <a v-if="event.url" :href="event.url" target="_blank" rel="noopener" class="card-url" @click.stop>
+                  <q-icon name="open_in_new" size="12px" style="margin-right: 4px;" />
+                  {{ t('days_official_site') }}
+                </a>
+                <a v-if="loc(event, 'location')" :href="mapsUrl(loc(event, 'location'))" target="_blank" rel="noopener" class="card-url card-url-nav" @click.stop>
+                  <q-icon name="navigation" size="12px" style="margin-right: 4px;" />
+                  {{ t('days_navigate') }}
+                </a>
+              </div>
             </div>
 
-            <div v-if="!editMode" class="card-chevron">
+            <!-- Edit mode actions -->
+            <div v-if="editMode" class="card-edit-actions">
+              <q-btn flat dense round icon="edit" size="xs" style="color: var(--ink-mute);" @click.stop="openEditEvent(idx)" />
+              <q-btn flat dense round icon="delete_outline" size="xs" style="color: var(--hibiscus);" @click.stop="confirmDeleteEvent(idx)" />
+            </div>
+
+            <!-- Chevron (view mode only) -->
+            <div v-if="!editMode" class="card-chevron" @click="toggleExpand(idx)" style="cursor:pointer;">
               <q-icon :name="expandedIdx === idx ? 'expand_less' : 'expand_more'" size="16px"
                 style="color: var(--ink-faint);" />
             </div>
@@ -192,6 +218,130 @@
 
     </div>
 
+    <!-- Add / Edit Event Dialog -->
+    <q-dialog v-model="eventDialogOpen" persistent>
+      <q-card style="width: 100%; max-width: 480px; border-radius: 20px; background: var(--surface);">
+        <q-card-section style="padding: 20px 20px 0;">
+          <div class="t-mono-cap" style="margin-bottom: 4px;">{{ isEditingEvent ? t('days_dialog_edit') : t('days_dialog_add') }}</div>
+          <div style="font-size: 20px; font-weight: 700; color: var(--ink);">{{ t('days_dialog_title') }}</div>
+        </q-card-section>
+
+        <q-card-section style="padding: 16px 20px; display: flex; flex-direction: column; gap: 14px;">
+          <!-- Icon type -->
+          <div>
+            <div style="font-size: 12px; color: var(--ink-mute); margin-bottom: 8px;">{{ t('days_field_icon') }}</div>
+            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+              <button
+                v-for="ic in eventIcons"
+                :key="ic.icon"
+                class="icon-chip"
+                :class="{ active: eventForm.icon === ic.icon }"
+                @click="eventForm.icon = ic.icon"
+              >
+                <q-icon :name="ic.icon" size="16px" />
+                <span style="font-size: 11px; margin-left: 4px;">{{ t(ic.labelKey) }}</span>
+              </button>
+            </div>
+          </div>
+
+          <q-input
+            v-model="eventForm.titleZh"
+            :label="t('days_field_title_zh')"
+            outlined rounded dense color="primary" bg-color="transparent"
+            :rules="[v => !!v || t('days_required')]"
+          />
+          <q-input
+            v-model="eventForm.titleEn"
+            :label="t('days_field_title_en')"
+            outlined rounded dense color="primary" bg-color="transparent"
+          />
+
+          <!-- Time range -->
+          <div class="row q-gutter-sm">
+            <q-input
+              v-model="eventForm.timeStart"
+              :label="t('days_field_time_start')"
+              outlined rounded dense color="primary" bg-color="transparent"
+              class="col" readonly
+            >
+              <template #append>
+                <q-icon name="schedule" size="15px" style="cursor:pointer; color: var(--ink-mute);">
+                  <q-popup-proxy cover transition-show="scale" transition-hide="scale">
+                    <q-time v-model="eventForm.timeStart" mask="HH:mm" format24h color="primary">
+                      <div class="row items-center justify-end">
+                        <q-btn v-close-popup :label="t('booking_picker_ok')" color="primary" flat />
+                      </div>
+                    </q-time>
+                  </q-popup-proxy>
+                </q-icon>
+              </template>
+            </q-input>
+            <q-input
+              v-model="eventForm.timeEnd"
+              :label="t('days_field_time_end')"
+              outlined rounded dense color="primary" bg-color="transparent"
+              class="col" readonly
+            >
+              <template #append>
+                <q-icon name="schedule" size="15px" style="cursor:pointer; color: var(--ink-mute);">
+                  <q-popup-proxy cover transition-show="scale" transition-hide="scale">
+                    <q-time v-model="eventForm.timeEnd" mask="HH:mm" format24h color="primary">
+                      <div class="row items-center justify-end">
+                        <q-btn v-close-popup :label="t('booking_picker_ok')" color="primary" flat />
+                      </div>
+                    </q-time>
+                  </q-popup-proxy>
+                </q-icon>
+              </template>
+            </q-input>
+          </div>
+
+          <q-input
+            v-model="eventForm.locationZh"
+            :label="t('days_field_location_zh')"
+            outlined rounded dense color="primary" bg-color="transparent"
+          />
+          <q-input
+            v-model="eventForm.locationEn"
+            :label="t('days_field_location_en')"
+            outlined rounded dense color="primary" bg-color="transparent"
+          />
+          <q-input
+            v-model="eventForm.descZh"
+            :label="t('days_field_desc_zh')"
+            outlined rounded dense color="primary" bg-color="transparent"
+            type="textarea" autogrow
+          />
+          <q-input
+            v-model="eventForm.url"
+            :label="t('days_field_url')"
+            outlined rounded dense color="primary" bg-color="transparent"
+            placeholder="https://"
+          />
+        </q-card-section>
+
+        <q-card-actions style="padding: 8px 20px 20px; gap: 8px;">
+          <q-btn flat :label="t('booking_cancel')" style="color: var(--ink-mute);" @click="eventDialogOpen = false" />
+          <q-space />
+          <q-btn unelevated :label="isEditingEvent ? t('booking_save') : t('days_add_btn')" color="primary" :loading="eventSaving" @click="submitEventForm" />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
+
+    <!-- Delete Event confirm -->
+    <q-dialog v-model="deleteEventDialogOpen">
+      <q-card style="border-radius: 20px; background: var(--surface); min-width: 280px;">
+        <q-card-section style="padding: 20px;">
+          <div style="font-size: 16px; font-weight: 700; color: var(--ink); margin-bottom: 6px;">{{ t('days_delete_title') }}</div>
+          <div style="font-size: 13px; color: var(--ink-mute);">{{ loc(deletingEvent || {}, 'title') }}</div>
+        </q-card-section>
+        <q-card-actions style="padding: 0 20px 20px; gap: 8px;">
+          <q-btn flat :label="t('booking_cancel')" style="color: var(--ink-mute);" @click="deleteEventDialogOpen = false" />
+          <q-space />
+          <q-btn unelevated :label="t('booking_delete_confirm')" color="negative" :loading="eventDeleting" @click="executeDeleteEvent" />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
 
   </q-page>
 </template>
@@ -220,9 +370,8 @@ const toggleExpand = (idx) => {
 }
 watch(activeDay, () => { expandedIdx.value = null })
 
-// ── Edit mode ─────────────────────────────────────────────
+// ── Edit mode (drag to reorder) ───────────────────────────
 const editMode = ref(false)
-// Working copy of events for the current day (reset when day changes or edit starts)
 const localEvents = ref([])
 
 watch(
@@ -239,6 +388,9 @@ function enterEditMode() {
   editMode.value = true
 }
 
+const mapsUrl = (location) =>
+  `https://maps.google.com?q=${encodeURIComponent(location)}`
+
 const { onPointerDown: longPressDown } = useLongPress(() => {
   if ($q.screen.lt.md) enterEditMode()
 })
@@ -248,6 +400,122 @@ async function exitEditMode() {
   const dayId = activeData.value.id
   if (!dayId) return
   await tripStore.reorderEvents(dayId, localEvents.value)
+}
+
+// ── Event icons ───────────────────────────────────────────
+const eventIcons = [
+  { icon: 'flight_takeoff', labelKey: 'days_icon_flight' },
+  { icon: 'hotel', labelKey: 'days_icon_hotel' },
+  { icon: 'restaurant', labelKey: 'days_icon_restaurant' },
+  { icon: 'directions_car', labelKey: 'days_icon_car' },
+  { icon: 'beach_access', labelKey: 'days_icon_beach' },
+  { icon: 'hiking', labelKey: 'days_icon_hike' },
+  { icon: 'shopping_bag', labelKey: 'days_icon_shop' },
+  { icon: 'local_activity', labelKey: 'days_icon_activity' },
+]
+
+// ── Add / Edit event ──────────────────────────────────────
+const eventDialogOpen = ref(false)
+const isEditingEvent = ref(false)
+const editingEventIdx = ref(null)
+const eventSaving = ref(false)
+
+const emptyEventForm = () => ({
+  icon: 'local_activity',
+  titleZh: '',
+  titleEn: '',
+  timeStart: '',
+  timeEnd: '',
+  locationZh: '',
+  locationEn: '',
+  descZh: '',
+  url: '',
+})
+
+const eventForm = ref(emptyEventForm())
+
+function openAddEvent() {
+  eventForm.value = emptyEventForm()
+  isEditingEvent.value = false
+  editingEventIdx.value = null
+  eventDialogOpen.value = true
+}
+
+function openEditEvent(idx) {
+  const ev = localEvents.value[idx]
+  eventForm.value = {
+    icon: ev.icon ?? 'local_activity',
+    titleZh: ev.title?.zh ?? ev.title ?? '',
+    titleEn: ev.title?.en ?? '',
+    timeStart: ev.timeStart ?? ev.time ?? '',
+    timeEnd: ev.timeEnd ?? '',
+    locationZh: ev.location?.zh ?? ev.location ?? '',
+    locationEn: ev.location?.en ?? '',
+    descZh: ev.desc?.zh ?? ev.desc ?? '',
+    url: ev.url ?? '',
+  }
+  isEditingEvent.value = true
+  editingEventIdx.value = idx
+  eventDialogOpen.value = true
+}
+
+function buildEvent(form) {
+  const event = {
+    icon: form.icon,
+    title: form.titleEn ? { zh: form.titleZh, en: form.titleEn } : form.titleZh,
+    timeStart: form.timeStart || '',
+    timeEnd: form.timeEnd || '',
+    url: form.url || '',
+  }
+  if (form.locationZh || form.locationEn) {
+    event.location = form.locationEn
+      ? { zh: form.locationZh, en: form.locationEn }
+      : form.locationZh
+  }
+  if (form.descZh) {
+    event.desc = { zh: form.descZh, en: '' }
+  }
+  return event
+}
+
+async function submitEventForm() {
+  if (!eventForm.value.titleZh.trim()) return
+  eventSaving.value = true
+  const dayId = activeData.value.id
+  try {
+    const event = buildEvent(eventForm.value)
+    if (isEditingEvent.value) {
+      await tripStore.updateEvent(dayId, editingEventIdx.value, event)
+    } else {
+      await tripStore.addEvent(dayId, event)
+    }
+    eventDialogOpen.value = false
+  } finally {
+    eventSaving.value = false
+  }
+}
+
+// ── Delete event ──────────────────────────────────────────
+const deleteEventDialogOpen = ref(false)
+const deletingEventIdx = ref(null)
+const deletingEvent = ref(null)
+const eventDeleting = ref(false)
+
+function confirmDeleteEvent(idx) {
+  deletingEventIdx.value = idx
+  deletingEvent.value = localEvents.value[idx]
+  deleteEventDialogOpen.value = true
+}
+
+async function executeDeleteEvent() {
+  eventDeleting.value = true
+  const dayId = activeData.value.id
+  try {
+    await tripStore.deleteEvent(dayId, deletingEventIdx.value)
+    deleteEventDialogOpen.value = false
+  } finally {
+    eventDeleting.value = false
+  }
 }
 </script>
 
@@ -378,9 +646,6 @@ async function exitEditMode() {
 
 /* ── Edit FAB ── */
 .edit-fab {
-  position: absolute;
-  bottom: 12px;
-  right: 14px;
   width: 32px;
   height: 32px;
   border-radius: 50%;
@@ -394,7 +659,7 @@ async function exitEditMode() {
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   transition: background 0.18s;
-  z-index: 2;
+  flex-shrink: 0;
 }
 
 .edit-fab:active {
@@ -564,6 +829,7 @@ async function exitEditMode() {
 
 .card-collapsed {
   padding-right: 20px;
+  cursor: pointer;
 }
 
 .card-title {
@@ -595,6 +861,13 @@ async function exitEditMode() {
   margin-bottom: 10px;
 }
 
+.card-actions-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 2px;
+}
+
 .card-url {
   display: inline-flex;
   align-items: center;
@@ -610,6 +883,11 @@ async function exitEditMode() {
 
 .card-url:active {
   opacity: 0.7;
+}
+
+.card-url-nav {
+  color: var(--lagoon, #56C6CC);
+  background: var(--lagoon-soft, rgba(86,198,204,0.12));
 }
 
 .card-chevron {
@@ -657,5 +935,39 @@ async function exitEditMode() {
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+}
+
+/* ── Card edit actions ── */
+.card-edit-actions {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: flex;
+  gap: 2px;
+}
+
+/* ── timeline-card: remove cursor in view mode (card-collapsed handles it) ── */
+.timeline-card {
+  cursor: default;
+}
+
+/* ── Icon chip (event dialog) ── */
+.icon-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1.5px solid var(--surface-stroke);
+  background: transparent;
+  color: var(--ink-mute);
+  font-family: var(--font-sans);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.icon-chip.active {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--accent-deep);
 }
 </style>

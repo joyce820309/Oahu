@@ -21,12 +21,39 @@ export const useTripStore = defineStore('trip', () => {
     }
   }
 
-  async function reorderEvents(dayId, reorderedEvents) {
+  async function _persistEvents(dayId, events) {
     const dayRef = doc(db, 'trips', 'oahu-2026', 'days', dayId)
-    await updateDoc(dayRef, { events: reorderedEvents })
-    const dayIndex = days.value.findIndex((d) => d.id === dayId)
-    if (dayIndex !== -1) days.value[dayIndex].events = reorderedEvents
+    await updateDoc(dayRef, { events })
+    const idx = days.value.findIndex((d) => d.id === dayId)
+    if (idx !== -1) days.value[idx].events = events
   }
 
-  return { days, loading, error, fetchDays, reorderEvents }
+  async function reorderEvents(dayId, reorderedEvents) {
+    await _persistEvents(dayId, reorderedEvents)
+  }
+
+  async function addEvent(dayId, event) {
+    const day = days.value.find((d) => d.id === dayId)
+    if (!day) return
+    const events = [...(day.events || []), event]
+    await _persistEvents(dayId, events)
+  }
+
+  async function updateEvent(dayId, index, event) {
+    const day = days.value.find((d) => d.id === dayId)
+    if (!day) return
+    const events = [...(day.events || [])]
+    events[index] = event
+    await _persistEvents(dayId, events)
+  }
+
+  async function deleteEvent(dayId, index) {
+    const day = days.value.find((d) => d.id === dayId)
+    if (!day) return
+    const events = [...(day.events || [])]
+    events.splice(index, 1)
+    await _persistEvents(dayId, events)
+  }
+
+  return { days, loading, error, fetchDays, reorderEvents, addEvent, updateEvent, deleteEvent }
 })

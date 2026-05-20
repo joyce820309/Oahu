@@ -1,6 +1,5 @@
 <template>
   <q-page class="q-pb-xl" style="background: transparent; position: relative;">
-    TRIPPPP：{{ itineraryData }}
     <!-- Hero -->
     <div class="trip-hero">
       <div class="trip-hero-bg" />
@@ -139,7 +138,7 @@ const packingPct = 36
 
 const quickActions = [
   { key: 'days', icon: 'event', labelKey: 'nav_days', bg: 'var(--accent-soft)', fg: 'var(--accent-deep)', action: () => router.push('/days') },
-  { key: 'booking', icon: 'confirmation_number', labelKey: 'trip_booking', bg: 'var(--lagoon-soft)', fg: 'var(--lagoon)' },
+  { key: 'booking', icon: 'confirmation_number', labelKey: 'trip_booking', bg: 'var(--lagoon-soft)', fg: 'var(--lagoon)', action: () => router.push('/booking') },
   { key: 'pack', icon: 'backpack', labelKey: 'nav_pack', bg: 'var(--warm-soft)', fg: 'var(--warm)', action: () => router.push('/pack') },
   { key: 'explore', icon: 'travel_explore', labelKey: 'nav_explore', bg: 'var(--hibiscus-soft)', fg: 'var(--hibiscus)', action: () => router.push('/explore') },
 ]
