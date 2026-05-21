@@ -29,38 +29,34 @@
       </div>
     </div>
 
-    <!-- Map -->
-    <div class="map-card glass-strong q-mb-md">
-      <!-- No API key -->
-      <div v-if="!mapsApiKey" class="map-placeholder">
-        <q-icon name="map" size="3rem" color="primary" />
-        <div class="text-subtitle2 q-mt-md text-weight-bold">{{ t('explore_day_route') }}</div>
-        <div class="text-caption q-mt-xs" style="opacity:0.6">設定 VITE_GOOGLE_MAPS_API_KEY 後顯示地圖</div>
-        <a v-if="directionsUrl" :href="directionsUrl" target="_blank" rel="noopener" class="maps-link q-mt-lg">
-          <q-icon name="open_in_new" size="14px" style="margin-right:5px;" />
-          {{ t('explore_open_maps') }}
-        </a>
-      </div>
-
-      <!-- No locations -->
-      <div v-else-if="locationsForDay.length === 0" class="map-placeholder">
-        <q-icon name="location_off" size="3rem" color="grey-5" />
-        <div class="text-caption q-mt-md" style="opacity:0.6">{{ t('explore_no_location') }}</div>
-      </div>
-
-      <!-- Interactive map -->
-      <div v-else>
-        <div ref="mapEl" class="map-interactive" />
+    <!-- Static Map -->
+    <div class="map-card glass-strong q-mb-lg">
+      <template v-if="!mapsApiKey">
+        <div class="map-placeholder">
+          <q-icon name="map" size="3rem" color="primary" />
+          <div class="text-subtitle2 q-mt-md text-weight-bold">{{ t('explore_day_route') }}</div>
+          <div class="text-caption q-mt-xs" style="opacity:0.6">設定 VITE_GOOGLE_MAPS_API_KEY 後顯示地圖</div>
+        </div>
+      </template>
+      <template v-else-if="locationsForDay.length === 0">
+        <div class="map-placeholder">
+          <q-icon name="location_off" size="3rem" color="grey-5" />
+          <div class="text-caption q-mt-md" style="opacity:0.6">{{ t('explore_no_location') }}</div>
+        </div>
+      </template>
+      <template v-else>
+        <img :src="staticMapUrl" :alt="`Day ${localDay} route map`" class="map-img" loading="lazy" />
         <a v-if="directionsUrl" :href="directionsUrl" target="_blank" rel="noopener" class="maps-link-overlay">
           <q-icon name="open_in_new" size="13px" style="margin-right:4px;" />
           {{ t('explore_open_maps') }}
         </a>
-      </div>
+      </template>
     </div>
 
     <!-- Stop list -->
-    <div class="stop-list">
-      <div v-for="(stop, idx) in locationsForDay" :key="idx" class="stop-row">
+    <div class="section-label q-mb-sm">{{ t('explore_stops') }}</div>
+    <div class="stop-list q-mb-xl">
+      <div v-for="(stop, idx) in locationsForDay" :key="'stop-' + idx" class="stop-row">
         <div class="stop-index glass-strong">{{ idx + 1 }}</div>
         <div class="stop-dot-col">
           <div class="stop-line" v-if="idx < locationsForDay.length - 1" />
@@ -73,23 +69,36 @@
           </div>
           <div class="stop-time">{{ stop.timeStart || stop.time || '' }}{{ stop.timeEnd ? ' – ' + stop.timeEnd : '' }}</div>
         </div>
-        <a
-          :href="`https://maps.google.com?q=${encodeURIComponent(getLocationEn(stop))}`"
-          target="_blank" rel="noopener"
-          class="stop-nav-btn"
-          @click.stop
-        >
+        <a :href="`https://maps.google.com?q=${encodeURIComponent(getLocationEn(stop))}`"
+          target="_blank" rel="noopener" class="stop-nav-btn" @click.stop>
           <q-icon name="navigation" size="14px" />
         </a>
       </div>
     </div>
+
+    <!-- Transit list（directions_car 的行程） -->
+    <template v-if="transitForDay.length > 0">
+      <div class="section-label q-mb-sm">{{ t('explore_transit') }}</div>
+      <div class="transit-list">
+        <div v-for="(ev, idx) in transitForDay" :key="'transit-' + idx" class="transit-row glass-strong">
+          <div class="transit-icon">
+            <q-icon :name="ev.icon || 'directions_car'" size="16px" style="color: var(--ink-mute);" />
+          </div>
+          <div class="transit-info">
+            <div class="transit-title">{{ loc(ev, 'title') }}</div>
+            <div v-if="loc(ev, 'desc')" class="transit-desc">{{ loc(ev, 'desc') }}</div>
+          </div>
+          <div class="transit-time">{{ ev.timeStart || ev.time || '' }}</div>
+        </div>
+      </div>
+    </template>
+
   </q-page>
 </template>
 
 <script setup>
-import { setOptions, importLibrary } from '@googlemaps/js-api-loader'
-
 const { t } = useI18n()
+
 const activeDay = inject('activeDay')
 const itineraryData = inject('itineraryData')
 const loc = inject('loc')
@@ -110,10 +119,33 @@ const getLocationEn = (event) => {
   return l
 }
 
+// 有地點的行程 → 地圖 + stop list
 const locationsForDay = computed(() =>
   (localDayData.value.events || []).filter((e) => !!getLocationEn(e))
 )
 
+// 交通行程（directions_car icon）→ transit list
+const TRANSIT_ICONS = ['directions_car', 'directions_bus', 'directions_transit', 'flight', 'flight_takeoff', 'local_taxi']
+const transitForDay = computed(() =>
+  (localDayData.value.events || []).filter((e) => TRANSIT_ICONS.includes(e.icon))
+)
+
+// Google Maps Static API — 不指定 zoom，讓 Google 自動 fit bounds
+const staticMapUrl = computed(() => {
+  if (!mapsApiKey || locationsForDay.value.length === 0) return ''
+  const base = 'https://maps.googleapis.com/maps/api/staticmap'
+  const size = '800x400'
+  const markers = locationsForDay.value
+    .map((e, i) => `markers=color:0x56C6CC%7Clabel:${i + 1}%7C${encodeURIComponent(getLocationEn(e))}`)
+    .join('&')
+  const pathPoints = locationsForDay.value.map((e) => encodeURIComponent(getLocationEn(e))).join('%7C')
+  const path = locationsForDay.value.length > 1
+    ? `path=color:0x56C6CCcc%7Cweight:3%7C${pathPoints}`
+    : ''
+  return `${base}?size=${size}&scale=2&${markers}${path ? '&' + path : ''}&key=${mapsApiKey}`
+})
+
+// Google Maps Directions URL（多點路線）
 const directionsUrl = computed(() => {
   const locs = locationsForDay.value
   if (locs.length === 0) return ''
@@ -124,92 +156,17 @@ const directionsUrl = computed(() => {
   const waypoints = locs.slice(1, -1).map((e) => encodeURIComponent(getLocationEn(e))).join('|')
   return `https://www.google.com/maps/dir/?api=1&origin=${origin}&destination=${destination}${waypoints ? '&waypoints=' + waypoints : ''}`
 })
-
-// ── Map ───────────────────────────────────────────────────
-const mapEl = ref(null)
-let mapInstance = null
-
-const ACCENT = '#56C6CC'
-
-async function initMap() {
-  if (!mapsApiKey || locationsForDay.value.length === 0 || !mapEl.value) return
-
-  setOptions({ apiKey: mapsApiKey, version: 'weekly' })
-
-  const { Map, Polyline } = await importLibrary('maps')
-  const { Geocoder } = await importLibrary('geocoding')
-  const { AdvancedMarkerElement } = await importLibrary('marker')
-
-  const geocoder = new Geocoder()
-
-  mapInstance = new Map(mapEl.value, {
-    zoom: 11,
-    center: { lat: 21.3069, lng: -157.8583 }, // O'ahu 中心
-    mapId: 'oahu_route_map',
-    disableDefaultUI: false,
-    zoomControl: true,
-    streetViewControl: false,
-    mapTypeControl: false,
-    fullscreenControl: true,
-  })
-
-  const coords = []
-
-  for (const [i, stop] of locationsForDay.value.entries()) {
-    const address = getLocationEn(stop)
-    if (!address) continue
-
-    await geocoder.geocode({ address }, (results, status) => {
-      if (status !== 'OK' || !results[0]) return
-      const pos = results[0].geometry.location
-      coords.push(pos)
-
-      // Numbered marker pin
-      const pin = document.createElement('div')
-      pin.className = 'map-marker-pin'
-      pin.textContent = String(i + 1)
-
-      new AdvancedMarkerElement({
-        map: mapInstance,
-        position: pos,
-        content: pin,
-        title: loc(stop, 'title'),
-      })
-    })
-  }
-
-  // Draw polyline after all geocodes resolve
-  await new Promise((r) => setTimeout(r, 0))
-  if (coords.length > 1) {
-    new Polyline({
-      path: coords,
-      geodesic: true,
-      strokeColor: ACCENT,
-      strokeOpacity: 0.85,
-      strokeWeight: 3,
-      map: mapInstance,
-    })
-
-    // Fit bounds
-    const { LatLngBounds } = await importLibrary('core')
-    const bounds = new LatLngBounds()
-    coords.forEach((c) => bounds.extend(c))
-    mapInstance.fitBounds(bounds, 60)
-  } else if (coords.length === 1) {
-    mapInstance.setCenter(coords[0])
-    mapInstance.setZoom(14)
-  }
-}
-
-// Re-init map when day changes or map element mounts
-watch([localDay, mapEl], async () => {
-  mapInstance = null
-  await nextTick()
-  initMap()
-}, { immediate: true })
 </script>
 
 <style scoped>
+.section-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-mute);
+}
+
 /* ── Day chip selector ── */
 .day-chips-wrap { overflow: hidden; }
 
@@ -257,14 +214,13 @@ watch([localDay, mapEl], async () => {
   border-radius: 20px;
   overflow: hidden;
   position: relative;
-  min-height: 200px;
+  min-height: 180px;
 }
-
-.map-interactive {
+.map-img {
   width: 100%;
-  height: 340px;
+  display: block;
+  object-fit: cover;
 }
-
 .map-placeholder {
   display: flex;
   flex-direction: column;
@@ -273,21 +229,6 @@ watch([localDay, mapEl], async () => {
   padding: 40px 24px;
   text-align: center;
 }
-
-.maps-link {
-  display: inline-flex;
-  align-items: center;
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--accent-deep);
-  text-decoration: none;
-  padding: 6px 14px;
-  border-radius: 999px;
-  background: var(--accent-soft);
-  transition: opacity 0.15s;
-}
-.maps-link:active { opacity: 0.7; }
-
 .maps-link-overlay {
   display: flex;
   align-items: center;
@@ -311,7 +252,6 @@ watch([localDay, mapEl], async () => {
   align-items: flex-start;
   margin-bottom: 8px;
 }
-
 .stop-index {
   flex-shrink: 0;
   width: 26px;
@@ -325,7 +265,6 @@ watch([localDay, mapEl], async () => {
   color: var(--accent-deep);
   margin-top: 10px;
 }
-
 .stop-dot-col { flex-shrink: 0; width: 0; position: relative; }
 .stop-line {
   position: absolute;
@@ -335,7 +274,6 @@ watch([localDay, mapEl], async () => {
   width: 1px;
   background: var(--surface-stroke);
 }
-
 .stop-info {
   flex: 1;
   padding: 10px 12px;
@@ -354,7 +292,6 @@ watch([localDay, mapEl], async () => {
   margin-bottom: 2px;
 }
 .stop-time { font-size: 11px; color: var(--ink-faint, var(--ink-mute)); }
-
 .stop-nav-btn {
   flex-shrink: 0;
   width: 34px;
@@ -370,23 +307,36 @@ watch([localDay, mapEl], async () => {
   transition: opacity 0.15s;
 }
 .stop-nav-btn:active { opacity: 0.7; }
-</style>
 
-<style>
-/* 地圖 marker 樣式（非 scoped，因為是 DOM 注入） */
-.map-marker-pin {
-  width: 26px;
-  height: 26px;
+/* ── Transit list ── */
+.transit-list { display: flex; flex-direction: column; gap: 8px; }
+
+.transit-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 14px;
+}
+.transit-icon {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
-  background: #56C6CC;
-  color: #fff;
-  font-size: 11px;
-  font-weight: 700;
+  background: var(--surface-stroke);
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 2px solid #fff;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.25);
-  font-family: sans-serif;
+  margin-top: 2px;
+}
+.transit-info { flex: 1; }
+.transit-title { font-size: 13px; font-weight: 600; color: var(--ink); margin-bottom: 3px; }
+.transit-desc { font-size: 11px; color: var(--ink-mute); line-height: 1.5; }
+.transit-time {
+  flex-shrink: 0;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--ink-mute);
+  padding-top: 2px;
 }
 </style>
