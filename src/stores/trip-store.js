@@ -55,5 +55,14 @@ export const useTripStore = defineStore('trip', () => {
     await _persistEvents(dayId, events)
   }
 
-  return { days, loading, error, fetchDays, reorderEvents, addEvent, updateEvent, deleteEvent }
+  async function updateEventTransit(dayId, index, transit) {
+    const day = days.value.find((d) => d.id === dayId)
+    if (!day) return
+    const events = [...(day.events || [])]
+    events[index] = { ...events[index], transit: transit ?? undefined }
+    if (!transit) delete events[index].transit
+    await _persistEvents(dayId, events)
+  }
+
+  return { days, loading, error, fetchDays, reorderEvents, addEvent, updateEvent, deleteEvent, updateEventTransit }
 })

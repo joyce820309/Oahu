@@ -28,9 +28,6 @@
     <div class="relative-position overflow-hidden day-hero">
       <!-- 標題文字：平板以上才顯示 -->
       <div class="gt-xs q-pa-lg text-center">
-        <div class="text-h5 text-weight-bolder q-mb-xs relative-position" style="z-index:1; color: #fff;">
-          {{ loc(activeData, 'title') }}
-        </div>
         <div class="text-subtitle2 text-weight-medium relative-position" style="z-index:1; opacity:0.82; color: #fff;">
           Day {{ activeDay }} · {{ activeData.date }}
         </div>
@@ -75,8 +72,8 @@
     <div style="padding: 16px; max-width: 800px; margin: 0 auto;">
 
       <VueDraggable v-model="localEvents" :disabled="!editMode" :animation="180" ghost-class="dnd-ghost-row"
-        chosen-class="dnd-chosen-row" class="timeline" :class="{ 'timeline-edit': editMode }"
-        @move="onDragMove" @end="stopAutoScroll">
+        chosen-class="dnd-chosen-row" class="timeline" :class="{ 'timeline-edit': editMode }" @move="onDragMove"
+        @end="stopAutoScroll">
         <div v-for="(event, idx) in localEvents" :key="idx" class="timeline-row">
 
           <!-- Time column -->
@@ -84,14 +81,28 @@
             <div style="font-size: 12px; font-weight: 600; color: var(--ink); white-space: nowrap;">
               {{ event.timeStart || event.time || '' }}
             </div>
-            <div v-if="event.timeEnd" style="font-size: 10px; color: var(--ink-mute); margin-top: 2px; white-space: nowrap;">
+            <div v-if="event.timeEnd"
+              style="font-size: 10px; color: var(--ink-mute); margin-top: 2px; white-space: nowrap;">
               {{ event.timeEnd }}
             </div>
           </div>
 
-          <!-- Dot -->
+          <!-- Dot + transit badge -->
           <div class="timeline-dot-col">
-            <div class="timeline-line" v-if="idx < localEvents.length - 1" />
+            <div v-if="idx < localEvents.length - 1" class="timeline-line-wrap">
+              <div class="timeline-line" />
+              <!-- Transit badge：非編輯模式才顯示 -->
+              <button
+                v-if="!editMode"
+                class="transit-badge"
+                :class="{ 'transit-badge--set': !!event.transit }"
+                @click.stop="openTransitDialog(idx)"
+              >
+                <q-icon :name="transitIcon(event.transit)" size="11px" />
+                <span v-if="event.transit?.duration" class="transit-badge-text">{{ event.transit.duration }}</span>
+                <span v-else class="transit-badge-text transit-badge-add">+</span>
+              </button>
+            </div>
             <div class="timeline-dot">
               <q-icon :name="event.icon" size="14px" style="color: var(--accent-deep);" />
             </div>
@@ -119,7 +130,8 @@
                   <q-icon name="open_in_new" size="12px" style="margin-right: 4px;" />
                   {{ t('days_official_site') }}
                 </a>
-                <a v-if="loc(event, 'location')" :href="mapsUrl(loc(event, 'location'))" target="_blank" rel="noopener" class="card-url card-url-nav" @click.stop>
+                <a v-if="loc(event, 'location')" :href="mapsUrl(loc(event, 'location'))" target="_blank" rel="noopener"
+                  class="card-url card-url-nav" @click.stop>
                   <q-icon name="navigation" size="12px" style="margin-right: 4px;" />
                   {{ t('days_navigate') }}
                 </a>
@@ -128,8 +140,10 @@
 
             <!-- Edit mode actions -->
             <div v-if="editMode" class="card-edit-actions">
-              <q-btn flat dense round icon="edit" size="xs" style="color: var(--ink-mute);" @click.stop="openEditEvent(idx)" />
-              <q-btn flat dense round icon="delete_outline" size="xs" style="color: var(--hibiscus);" @click.stop="confirmDeleteEvent(idx)" />
+              <q-btn flat dense round icon="edit" size="xs" style="color: var(--ink-mute);"
+                @click.stop="openEditEvent(idx)" />
+              <q-btn flat dense round icon="delete_outline" size="xs" style="color: var(--hibiscus);"
+                @click.stop="confirmDeleteEvent(idx)" />
             </div>
 
             <!-- Chevron (view mode only) -->
@@ -238,7 +252,8 @@
     <q-dialog v-model="eventDialogOpen" persistent>
       <q-card style="width: 100%; max-width: 480px; border-radius: 20px; background: var(--surface);">
         <q-card-section style="padding: 20px 20px 0;">
-          <div class="t-mono-cap" style="margin-bottom: 4px;">{{ isEditingEvent ? t('days_dialog_edit') : t('days_dialog_add') }}</div>
+          <div class="t-mono-cap" style="margin-bottom: 4px;">{{ isEditingEvent ? t('days_dialog_edit') :
+            t('days_dialog_add') }}</div>
           <div style="font-size: 20px; font-weight: 700; color: var(--ink);">{{ t('days_dialog_title') }}</div>
         </q-card-section>
 
@@ -247,39 +262,23 @@
           <div>
             <div style="font-size: 12px; color: var(--ink-mute); margin-bottom: 8px;">{{ t('days_field_icon') }}</div>
             <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-              <button
-                v-for="ic in eventIcons"
-                :key="ic.icon"
-                class="icon-chip"
-                :class="{ active: eventForm.icon === ic.icon }"
-                @click="eventForm.icon = ic.icon"
-              >
+              <button v-for="ic in eventIcons" :key="ic.icon" class="icon-chip"
+                :class="{ active: eventForm.icon === ic.icon }" @click="eventForm.icon = ic.icon">
                 <q-icon :name="ic.icon" size="16px" />
                 <span style="font-size: 11px; margin-left: 4px;">{{ t(ic.labelKey) }}</span>
               </button>
             </div>
           </div>
 
-          <q-input
-            v-model="eventForm.titleZh"
-            :label="t('days_field_title_zh')"
-            outlined rounded dense color="primary" bg-color="transparent"
-            :rules="[v => !!v || t('days_required')]"
-          />
-          <q-input
-            v-model="eventForm.titleEn"
-            :label="t('days_field_title_en')"
-            outlined rounded dense color="primary" bg-color="transparent"
-          />
+          <q-input v-model="eventForm.titleZh" :label="t('days_field_title_zh')" outlined rounded dense color="primary"
+            bg-color="transparent" :rules="[v => !!v || t('days_required')]" />
+          <q-input v-model="eventForm.titleEn" :label="t('days_field_title_en')" outlined rounded dense color="primary"
+            bg-color="transparent" />
 
           <!-- Time range -->
           <div class="row q-gutter-sm">
-            <q-input
-              v-model="eventForm.timeStart"
-              :label="t('days_field_time_start')"
-              outlined rounded dense color="primary" bg-color="transparent"
-              class="col" readonly
-            >
+            <q-input v-model="eventForm.timeStart" :label="t('days_field_time_start')" outlined rounded dense
+              color="primary" bg-color="transparent" class="col" readonly>
               <template #append>
                 <q-icon name="schedule" size="15px" style="cursor:pointer; color: var(--ink-mute);">
                   <q-popup-proxy cover transition-show="scale" transition-hide="scale">
@@ -292,12 +291,8 @@
                 </q-icon>
               </template>
             </q-input>
-            <q-input
-              v-model="eventForm.timeEnd"
-              :label="t('days_field_time_end')"
-              outlined rounded dense color="primary" bg-color="transparent"
-              class="col" readonly
-            >
+            <q-input v-model="eventForm.timeEnd" :label="t('days_field_time_end')" outlined rounded dense
+              color="primary" bg-color="transparent" class="col" readonly>
               <template #append>
                 <q-icon name="schedule" size="15px" style="cursor:pointer; color: var(--ink-mute);">
                   <q-popup-proxy cover transition-show="scale" transition-hide="scale">
@@ -312,34 +307,21 @@
             </q-input>
           </div>
 
-          <q-input
-            v-model="eventForm.locationZh"
-            :label="t('days_field_location_zh')"
-            outlined rounded dense color="primary" bg-color="transparent"
-          />
-          <q-input
-            v-model="eventForm.locationEn"
-            :label="t('days_field_location_en')"
-            outlined rounded dense color="primary" bg-color="transparent"
-          />
-          <q-input
-            v-model="eventForm.descZh"
-            :label="t('days_field_desc_zh')"
-            outlined rounded dense color="primary" bg-color="transparent"
-            type="textarea" autogrow
-          />
-          <q-input
-            v-model="eventForm.url"
-            :label="t('days_field_url')"
-            outlined rounded dense color="primary" bg-color="transparent"
-            placeholder="https://"
-          />
+          <q-input v-model="eventForm.locationZh" :label="t('days_field_location_zh')" outlined rounded dense
+            color="primary" bg-color="transparent" />
+          <q-input v-model="eventForm.locationEn" :label="t('days_field_location_en')" outlined rounded dense
+            color="primary" bg-color="transparent" />
+          <q-input v-model="eventForm.descZh" :label="t('days_field_desc_zh')" outlined rounded dense color="primary"
+            bg-color="transparent" type="textarea" autogrow />
+          <q-input v-model="eventForm.url" :label="t('days_field_url')" outlined rounded dense color="primary"
+            bg-color="transparent" placeholder="https://" />
         </q-card-section>
 
         <q-card-actions style="padding: 8px 20px 20px; gap: 8px;">
           <q-btn flat :label="t('booking_cancel')" style="color: var(--ink-mute);" @click="eventDialogOpen = false" />
           <q-space />
-          <q-btn unelevated :label="isEditingEvent ? t('booking_save') : t('days_add_btn')" color="primary" :loading="eventSaving" @click="submitEventForm" />
+          <q-btn unelevated :label="isEditingEvent ? t('booking_save') : t('days_add_btn')" color="primary"
+            :loading="eventSaving" @click="submitEventForm" />
         </q-card-actions>
       </q-card>
     </q-dialog>
@@ -348,13 +330,69 @@
     <q-dialog v-model="deleteEventDialogOpen">
       <q-card style="border-radius: 20px; background: var(--surface); min-width: 280px;">
         <q-card-section style="padding: 20px;">
-          <div style="font-size: 16px; font-weight: 700; color: var(--ink); margin-bottom: 6px;">{{ t('days_delete_title') }}</div>
+          <div style="font-size: 16px; font-weight: 700; color: var(--ink); margin-bottom: 6px;">{{
+            t('days_delete_title')
+          }}</div>
           <div style="font-size: 13px; color: var(--ink-mute);">{{ loc(deletingEvent || {}, 'title') }}</div>
         </q-card-section>
         <q-card-actions style="padding: 0 20px 20px; gap: 8px;">
-          <q-btn flat :label="t('booking_cancel')" style="color: var(--ink-mute);" @click="deleteEventDialogOpen = false" />
+          <q-btn flat :label="t('booking_cancel')" style="color: var(--ink-mute);"
+            @click="deleteEventDialogOpen = false" />
           <q-space />
-          <q-btn unelevated :label="t('booking_delete_confirm')" color="negative" :loading="eventDeleting" @click="executeDeleteEvent" />
+          <q-btn unelevated :label="t('booking_delete_confirm')" color="negative" :loading="eventDeleting"
+            @click="executeDeleteEvent" />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
+
+    <!-- Transit dialog -->
+    <q-dialog v-model="transitDialogOpen">
+      <q-card style="width: 100%; max-width: 400px; border-radius: 20px; background: var(--surface);">
+        <q-card-section style="padding: 20px 20px 0;">
+          <div class="t-mono-cap" style="margin-bottom: 4px;">{{ t('transit_dialog_label') }}</div>
+          <div style="font-size: 18px; font-weight: 700; color: var(--ink);">{{ t('transit_dialog_title') }}</div>
+        </q-card-section>
+
+        <q-card-section style="padding: 16px 20px; display: flex; flex-direction: column; gap: 14px;">
+          <!-- Mode selector -->
+          <div>
+            <div style="font-size: 12px; color: var(--ink-mute); margin-bottom: 8px;">{{ t('transit_mode') }}</div>
+            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+              <button
+                v-for="m in transitModes"
+                :key="m.mode"
+                class="icon-chip"
+                :class="{ active: transitForm.mode === m.mode }"
+                @click="transitForm.mode = m.mode"
+              >
+                <q-icon :name="m.icon" size="16px" />
+                <span style="font-size: 11px; margin-left: 4px;">{{ t(m.labelKey) }}</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Duration input -->
+          <q-input
+            v-model="transitForm.duration"
+            :label="t('transit_duration')"
+            outlined rounded dense color="primary" bg-color="transparent"
+            :placeholder="t('transit_duration_hint')"
+          />
+
+          <!-- Notes -->
+          <q-input
+            v-model="transitForm.note"
+            :label="t('transit_note')"
+            outlined rounded dense color="primary" bg-color="transparent"
+            type="textarea" autogrow
+          />
+        </q-card-section>
+
+        <q-card-actions style="padding: 8px 20px 20px; gap: 8px;">
+          <q-btn flat :label="t('booking_cancel')" style="color: var(--ink-mute);" @click="transitDialogOpen = false" />
+          <q-btn v-if="transitForm.mode || transitForm.duration" flat :label="t('transit_clear')" style="color: var(--hibiscus);" @click="clearTransit" />
+          <q-space />
+          <q-btn unelevated :label="t('booking_save')" color="primary" :loading="transitSaving" @click="saveTransit" />
         </q-card-actions>
       </q-card>
     </q-dialog>
@@ -551,6 +589,69 @@ async function submitEventForm() {
   }
 }
 
+// ── Transit ───────────────────────────────────────────────
+const transitModes = [
+  { mode: 'car',    icon: 'directions_car',    labelKey: 'transit_mode_car' },
+  { mode: 'walk',   icon: 'directions_walk',   labelKey: 'transit_mode_walk' },
+  { mode: 'flight', icon: 'flight',            labelKey: 'transit_mode_flight' },
+  { mode: 'bus',    icon: 'directions_bus',    labelKey: 'transit_mode_bus' },
+  { mode: 'boat',   icon: 'directions_boat',   labelKey: 'transit_mode_boat' },
+]
+
+const transitIconMap = {
+  car: 'directions_car',
+  walk: 'directions_walk',
+  flight: 'flight',
+  bus: 'directions_bus',
+  boat: 'directions_boat',
+}
+
+const transitIcon = (transit) =>
+  transitIconMap[transit?.mode] ?? 'more_horiz'
+
+const transitDialogOpen = ref(false)
+const transitTargetIdx = ref(null)
+const transitSaving = ref(false)
+const transitForm = ref({ mode: '', duration: '', note: '' })
+
+function openTransitDialog(idx) {
+  transitTargetIdx.value = idx
+  const existing = localEvents.value[idx]?.transit
+  transitForm.value = {
+    mode: existing?.mode ?? '',
+    duration: existing?.duration ?? '',
+    note: existing?.note ?? '',
+  }
+  transitDialogOpen.value = true
+}
+
+async function saveTransit() {
+  transitSaving.value = true
+  const idx = transitTargetIdx.value
+  const dayId = activeData.value.id
+  try {
+    const transit = transitForm.value.mode || transitForm.value.duration
+      ? { mode: transitForm.value.mode, duration: transitForm.value.duration, note: transitForm.value.note }
+      : null
+    await tripStore.updateEventTransit(dayId, idx, transit)
+    transitDialogOpen.value = false
+  } finally {
+    transitSaving.value = false
+  }
+}
+
+async function clearTransit() {
+  transitSaving.value = true
+  const idx = transitTargetIdx.value
+  const dayId = activeData.value.id
+  try {
+    await tripStore.updateEventTransit(dayId, idx, null)
+    transitDialogOpen.value = false
+  } finally {
+    transitSaving.value = false
+  }
+}
+
 // ── Delete event ──────────────────────────────────────────
 const deleteEventDialogOpen = ref(false)
 const deletingEventIdx = ref(null)
@@ -713,7 +814,7 @@ async function executeDeleteEvent() {
 .hero-compact-label {
   font-size: 12px;
   font-weight: 600;
-  color: rgba(255,255,255,0.85);
+  color: rgba(255, 255, 255, 0.85);
   letter-spacing: 0.02em;
 }
 
@@ -853,14 +954,62 @@ async function executeDeleteEvent() {
   flex-shrink: 0;
 }
 
-.timeline-line {
+.timeline-line-wrap {
   position: absolute;
   top: 42px;
   bottom: -10px;
   left: 50%;
   transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 1px;
+}
+
+.timeline-line {
+  flex: 1;
   width: 1px;
   background: var(--surface-stroke);
+}
+
+/* ── Transit badge ── */
+.transit-badge {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  padding: 3px 7px;
+  border-radius: 999px;
+  border: 1px dashed var(--surface-stroke);
+  background: var(--bg);
+  color: var(--ink-mute);
+  font-family: var(--font-sans);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.18s;
+  margin: 4px 0;
+  transform: translateX(-50%);
+}
+
+.transit-badge:active {
+  opacity: 0.7;
+}
+
+.transit-badge--set {
+  border-style: solid;
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent-deep);
+}
+
+.transit-badge-text {
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.transit-badge-add {
+  color: var(--ink-faint, var(--ink-mute));
+  font-size: 12px;
 }
 
 .timeline-card {
@@ -960,7 +1109,7 @@ async function executeDeleteEvent() {
 
 .card-url-nav {
   color: var(--lagoon, #56C6CC);
-  background: var(--lagoon-soft, rgba(86,198,204,0.12));
+  background: var(--lagoon-soft, rgba(86, 198, 204, 0.12));
 }
 
 .card-chevron {
